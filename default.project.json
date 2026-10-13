@@ -1,0 +1,30 @@
+{
+  "name": "Glide & Grab",
+  "serveAddress": "127.0.0.1",
+  "servePort": 34872,
+  "emitLegacyScripts": true,
+  "tree": {
+    "$className": "DataModel",
+    "$ignoreUnknownInstances": true,
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "$ignoreUnknownInstances": true,
+      "EggLoop": {
+        "$path": "scripts/EggLoop.server.lua",
+        "$ignoreUnknownInstances": true
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "$ignoreUnknownInstances": true,
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "$ignoreUnknownInstances": true,
+        "FlightHUD": {
+          "$path": "scripts/FlightHUD.client.lua",
+          "$ignoreUnknownInstances": true
+        }
+      }
+    }
+  }
+}

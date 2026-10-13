@@ -1,0 +1,23 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Rojo: Serve Glide & Grab",
+      "type": "process",
+      "command": "rojo",
+      "args": ["serve", "default.project.json"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {"reveal": "always", "panel": "dedicated"}
+    },
+    {
+      "label": "Rojo: Generate sourcemap",
+      "type": "process",
+      "command": "rojo",
+      "args": ["sourcemap", "default.project.json", "--output", "sourcemap.json"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    }
+  ]
+}
