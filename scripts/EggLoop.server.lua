@@ -1,9 +1,11 @@
 -- KOUSHIK_ROJO_SYNC_CHECK: Hello Koushik! This comment was edited from the project folder.
 -- Rojo manages this script from scripts/EggLoop.server.lua.
 -- Requires anchored Parts: HomeIsland, EggIsland, ChallengeIsland in Workspace.
+-- Optional art templates: ServerStorage > EggModels > CommonEgg / UncommonEgg.
 -- Two shared eggs; one carried egg per player; session coins (no saving yet).
 
 local Players = game:GetService("Players")
+local ServerStorage = game:GetService("ServerStorage")
 local Workspace = game:GetService("Workspace")
 
 local function islandPart(name)
@@ -14,13 +16,121 @@ end
 
 local home = islandPart("HomeIsland")
 local definitions = {
-	{Island = islandPart("EggIsland"), Name = "Common Egg", Value = 10, Color = Color3.fromRGB(255, 220, 110)},
-	{Island = islandPart("ChallengeIsland"), Name = "Uncommon Egg", Value = 25, Color = Color3.fromRGB(140, 255, 176)},
+	{Island = islandPart("EggIsland"), Template = "CommonEgg", Name = "Common Egg", Value = 10, Color = Color3.fromRGB(255, 220, 110)},
+	{Island = islandPart("ChallengeIsland"), Template = "UncommonEgg", Name = "Uncommon Egg", Value = 25, Color = Color3.fromRGB(140, 255, 176)},
 }
 assert(not Workspace:FindFirstChild("EggLoopPrototype"), "Keep only one EggLoop script")
 local objects = Instance.new("Folder")
 objects.Name = "EggLoopPrototype"
 objects.Parent = Workspace
+local hiddenEggs = Instance.new("Folder")
+hiddenEggs.Name = "EggLoopHiddenEggs"
+hiddenEggs.Parent = ServerStorage
+
+local function eggParts(egg)
+	local parts = {}
+	if egg:IsA("BasePart") then
+		table.insert(parts, egg)
+	end
+	for _, child in ipairs(egg:GetDescendants()) do
+		if child:IsA("BasePart") then
+			table.insert(parts, child)
+		end
+	end
+	return parts
+end
+
+local function eggBounds(egg)
+	if egg:IsA("Model") then return egg:GetBoundingBox() end
+	return egg.CFrame, egg.Size
+end
+
+local function positionEgg(egg, center)
+	-- Imported models can have pivots far away from their visible geometry.
+	local bounds = eggBounds(egg)
+	local pivotToBounds = egg:GetPivot():ToObjectSpace(bounds)
+	egg:PivotTo(center * pivotToBounds:Inverse())
+end
+
+local function cleanTemplate(egg)
+	-- Keep mesh/texture/appearance children; use only our own gameplay code.
+	for _, child in ipairs(egg:GetDescendants()) do
+		if child:IsA("LuaSourceContainer") or child:IsA("ProximityPrompt")
+			or child:IsA("JointInstance") or child:IsA("WeldConstraint")
+			or child:IsA("Constraint") then
+			child:Destroy()
+		end
+	end
+end
+
+local function makeEgg(definition)
+	local templates = ServerStorage:FindFirstChild("EggModels")
+	local template = templates and templates:FindFirstChild(definition.Template)
+	local egg = nil
+	if template and (template:IsA("BasePart") or template:IsA("Model")) then
+		egg = template:Clone()
+		if egg then
+			cleanTemplate(egg)
+			local parts = eggParts(egg)
+			if #parts == 0 then
+				egg:Destroy()
+				egg = nil
+			elseif egg:IsA("BasePart") and #parts > 1 then
+				-- A Model makes nested parts move and scale as one design.
+				local model = Instance.new("Model")
+				egg.Parent = model
+				egg = model
+			end
+		end
+	end
+	if not egg then
+		warn("EggLoop: Add an individual egg named " .. definition.Template
+			.. " directly inside ServerStorage/EggModels. Using the prototype egg for now.")
+		egg = Instance.new("Part")
+		egg.Shape = Enum.PartType.Ball
+		egg.Size = Vector3.new(3, 4, 3)
+		egg.Color = definition.Color
+		egg.Material = Enum.Material.Neon
+	else
+		-- Scale all axes together so the imported egg keeps its proportions.
+		local _, size = eggBounds(egg)
+		local factor = 4 / math.max(size.Y, 0.01)
+		if egg:IsA("Model") then
+			egg:ScaleTo(egg:GetScale() * factor)
+		else
+			egg.Size = egg.Size * factor
+		end
+	end
+	local parts = eggParts(egg)
+	for _, part in ipairs(parts) do
+		part.Anchored = true
+		part.CanCollide = false
+		part.CanTouch = false
+		part.CanQuery = false
+	end
+	return egg, parts[1]
+end
+
+local function makeCargo(egg, root)
+	-- Clone before hiding the source; preserve all of its visual children.
+	local cargo = egg:Clone()
+	assert(cargo, "EggLoop: The runtime egg must be Archivable")
+	cleanTemplate(cargo)
+	cargo.Name = "CarriedEgg"
+	positionEgg(cargo, root.CFrame * CFrame.new(0, 0, -3))
+	for _, part in ipairs(eggParts(cargo)) do
+		part.Anchored = false
+		part.CanCollide = false
+		part.CanTouch = false
+		part.CanQuery = false
+		part.Massless = true
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = root
+		weld.Part1 = part
+		weld.Parent = part
+	end
+	return cargo
+end
 
 local function makePrompt(part, action, text)
 	local prompt = Instance.new("ProximityPrompt")
@@ -60,14 +170,18 @@ local function releaseEgg(player, respawnDelay)
 	local record = carried[player]
 	if not record then return end
 	carried[player] = nil
-	if record.DeathConnection then record.DeathConnection:Disconnect() end
-	if record.Cargo then record.Cargo:Destroy() end
+	if record.DeathConnection then
+		record.DeathConnection:Disconnect()
+	end
+	if record.Cargo then
+		record.Cargo:Destroy()
+	end
 	local source = record.Source
 	source.Carrier = nil
 	-- Keep the source unavailable until its respawn timer finishes.
 	task.delay(respawnDelay, function()
-		if source.Part.Parent then
-			source.Part.Transparency = 0
+		if objects.Parent and source.Egg.Parent == hiddenEggs then
+			source.Egg.Parent = objects
 			source.Prompt.Enabled = true
 		end
 	end)
@@ -90,47 +204,32 @@ local function setupPlayer(player)
 	end)
 end
 Players.PlayerAdded:Connect(setupPlayer)
-for _, player in ipairs(Players:GetPlayers()) do setupPlayer(player) end
+for _, player in ipairs(Players:GetPlayers()) do
+	setupPlayer(player)
+end
 Players.PlayerRemoving:Connect(function(player)
 	releaseEgg(player, 0)
 end)
 
 for index, definition in ipairs(definitions) do
-	local egg = Instance.new("Part")
+	local egg, promptPart = makeEgg(definition)
 	egg.Name = "Egg" .. tostring(index)
-	egg.Shape = Enum.PartType.Ball
-	egg.Size = Vector3.new(3, 4, 3)
-	egg.Color = definition.Color
-	egg.Material = Enum.Material.Neon
-	egg.Anchored = true
-	egg.CanCollide = false
-	egg.CFrame = definition.Island.CFrame * CFrame.new(0, definition.Island.Size.Y / 2 + 2, 0)
+	local _, size = eggBounds(egg)
+	positionEgg(egg, definition.Island.CFrame * CFrame.new(0, definition.Island.Size.Y / 2 + size.Y / 2, 0))
 	egg:SetAttribute("EggName", definition.Name)
 	egg:SetAttribute("BankValue", definition.Value)
 	egg.Parent = objects
-	local prompt = makePrompt(egg, "Grab egg", definition.Name .. " | " .. definition.Value .. " coins")
-	local source = {Part = egg, Prompt = prompt, Definition = definition, Carrier = nil}
+	local prompt = makePrompt(promptPart, "Grab egg", definition.Name .. " | " .. definition.Value .. " coins")
+	local source = {Egg = egg, Prompt = prompt, Definition = definition, Carrier = nil}
 	prompt.Triggered:Connect(function(player)
-		local root, humanoid = validNearby(player, egg, prompt)
+		local root, humanoid = validNearby(player, promptPart, prompt)
 		if not root or source.Carrier or carried[player] then return end
+		local cargo = makeCargo(egg, root)
 		-- No yields between checking availability and reserving the egg.
 		source.Carrier = player
 		prompt.Enabled = false
-		egg.Transparency = 1
-		local cargo = egg:Clone()
-		cargo:ClearAllChildren()
-		cargo.Name = "CarriedEgg"
-		cargo.Transparency = 0
-		cargo.Anchored = false
-		cargo.CanCollide = false
-		cargo.CanTouch = false
-		cargo.CanQuery = false
-		cargo.Massless = true
-		cargo.CFrame = root.CFrame * CFrame.new(0, 0, -3)
-		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = root
-		weld.Part1 = cargo
-		weld.Parent = cargo
+		-- Moving the whole source also hides decals, lights and other effects.
+		egg.Parent = hiddenEggs
 		cargo.Parent = player.Character
 		local record = {Source = source, Cargo = cargo}
 		carried[player] = record

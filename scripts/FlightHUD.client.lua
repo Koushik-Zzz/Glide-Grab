@@ -1,5 +1,5 @@
--- Paste into ONE LocalScript named FlightHUD in StarterPlayer > StarterPlayerScripts.
--- Works with the existing EggLoop script; no server-script changes needed.
+-- Rojo manages FlightHUD in StarterPlayer > StarterPlayerScripts.
+-- Reads EggLoop cargo and PortalLoop's CurrentBiome player attribute.
 -- Reads Coins and the server-created CarriedEgg. Rewards stay on the server.
 -- Compact HUD: coins, objective banner, carried egg badge, animated reward.
 
@@ -62,7 +62,9 @@ local function frame(parent, name, position, size, color, radius)
 	object.BackgroundColor3 = color
 	object.BorderSizePixel = 0
 	object.Parent = parent
-	if radius then round(object, radius) end
+	if radius then
+		round(object, radius)
+	end
 	return object
 end
 
@@ -107,8 +109,8 @@ outline(missionCard, colors.ink, 3)
 local missionIcon = frame(missionCard, "RouteIcon", UDim2.fromOffset(12, 11), UDim2.fromOffset(36, 36), colors.teal, 36)
 local direction = label(missionIcon, "Direction", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), ">", 25, colors.white, Enum.Font.GothamBlack)
 direction.TextXAlignment = Enum.TextXAlignment.Center
-local missionTitle = label(missionCard, "Title", UDim2.fromOffset(60, 8), UDim2.new(1, -72, 0, 22), "Find an egg", 18, colors.ink, Enum.Font.GothamBold)
-local missionHint = label(missionCard, "Hint", UDim2.fromOffset(60, 31), UDim2.new(1, -72, 0, 17), "Choose either egg island", 12, colors.muted)
+local missionTitle = label(missionCard, "Title", UDim2.fromOffset(60, 8), UDim2.new(1, -72, 0, 22), "Explore Meadow", 18, colors.ink, Enum.Font.GothamBold)
+local missionHint = label(missionCard, "Hint", UDim2.fromOffset(60, 31), UDim2.new(1, -72, 0, 17), "Enter the green Meadow portal", 12, colors.muted)
 missionTitle.TextScaled = true
 missionHint.TextScaled = true
 for _, entry in ipairs({{missionTitle, 18}, {missionHint, 12}}) do
@@ -160,9 +162,15 @@ local cargoTween = nil
 local function showReward(gain)
 	rewardVersion = rewardVersion + 1
 	local version = rewardVersion
-	if rewardTween then rewardTween:Cancel() end
-	if rewardStrokeTween then rewardStrokeTween:Cancel() end
-	if coinTween then coinTween:Cancel() end
+	if rewardTween then
+		rewardTween:Cancel()
+	end
+	if rewardStrokeTween then
+		rewardStrokeTween:Cancel()
+	end
+	if coinTween then
+		coinTween:Cancel()
+	end
 	local narrow = canvas.AbsoluteSize.X < 760
 	local rewardX = narrow and math.min(196, canvas.AbsoluteSize.X - 112) or 24
 	local rewardY = narrow and 25 or 80
@@ -184,7 +192,9 @@ local function showReward(gain)
 		rewardStrokeTween:Play()
 	end)
 	task.delay(1.35, function()
-		if version == rewardVersion then rewardLabel.Visible = false end
+		if version == rewardVersion then
+			rewardLabel.Visible = false
+		end
 	end)
 end
 
@@ -192,6 +202,7 @@ local character = nil
 local characterConnections = {}
 
 local function refreshCargo()
+	local inMeadow = player:GetAttribute("CurrentBiome") == "Meadow"
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	local egg = character and character:FindFirstChild("CarriedEgg")
 	local carrying = character and humanoid and humanoid.Health > 0
@@ -201,23 +212,28 @@ local function refreshCargo()
 	if carrying then
 		cargoName.Text = egg:GetAttribute("EggName") or "Common Egg"
 		cargoValue.Text = "+" .. tostring(egg:GetAttribute("BankValue") or 10) .. " coins when banked"
-		missionTitle.Text = "Return home!"
-		missionHint.Text = "Bank your egg at the blue pad"
+		missionTitle.Text = inMeadow and "Fly back to camp!" or "Bank your egg!"
+		missionHint.Text = inMeadow and "Fly to the blue return portal" or "Bank your egg at the blue pad"
 		missionCard.BackgroundColor3 = colors.amber
 		missionIcon.BackgroundColor3 = colors.goldEdge
 		if not wasVisible then
-			if cargoTween then cargoTween:Cancel() end
+			if cargoTween then
+				cargoTween:Cancel()
+			end
 			cargoScale.Scale = 0.88
 			cargoTween = TweenService:Create(cargoScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1})
 			cargoTween:Play()
 		end
 	else
-		missionTitle.Text = "Find an egg"
-		missionHint.Text = "Choose either egg island"
+		missionTitle.Text = inMeadow and "Glide and find an egg" or "Explore Meadow"
+		missionHint.Text = inMeadow and "Fly between the Meadow islands" or "Enter the green Meadow portal"
 		missionCard.BackgroundColor3 = colors.mint
 		missionIcon.BackgroundColor3 = colors.teal
 	end
 end
+
+player:GetAttributeChangedSignal("CurrentBiome"):Connect(refreshCargo)
+refreshCargo()
 
 local function disconnectCharacter()
 	for _, connection in ipairs(characterConnections) do
@@ -254,7 +270,9 @@ player.CharacterRemoving:Connect(function(oldCharacter)
 		refreshCargo()
 	end
 end)
-if player.Character then bindCharacter(player.Character) end
+if player.Character then
+	bindCharacter(player.Character)
+end
 
 -- Build the HUD first, then wait for the existing server coin counter.
 task.spawn(function()

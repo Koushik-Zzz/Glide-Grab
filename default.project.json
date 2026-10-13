@@ -12,6 +12,10 @@
       "EggLoop": {
         "$path": "scripts/EggLoop.server.lua",
         "$ignoreUnknownInstances": true
+      },
+      "PortalLoop": {
+        "$path": "scripts/PortalLoop.server.lua",
+        "$ignoreUnknownInstances": true
       }
     },
     "StarterPlayer": {
