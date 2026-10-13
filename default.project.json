@@ -16,6 +16,54 @@
       "PortalLoop": {
         "$path": "scripts/PortalLoop.server.lua",
         "$ignoreUnknownInstances": true
+      },
+      "MeadowWind": {
+        "$path": "scripts/MeadowWind.server.lua",
+        "$ignoreUnknownInstances": true
+      },
+      "NestGuardian": {
+        "$path": "scripts/NestGuardian.server.lua",
+        "$ignoreUnknownInstances": true
+      },
+      "GuardianModules": {
+        "$path": "scripts/guardian",
+        "$ignoreUnknownInstances": true
+      },
+      "GliderBoost": {
+        "$path": "scripts/GliderBoost.server.lua",
+        "$ignoreUnknownInstances": true
+      }
+    },
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "$ignoreUnknownInstances": true,
+      "BoostModules": {
+        "$path": "scripts/boost",
+        "$ignoreUnknownInstances": true
+      }
+    },
+    "StarterGui": {
+      "$className": "StarterGui",
+      "$ignoreUnknownInstances": true,
+      "GliderBoostHUD": {
+        "$path": "ui/GliderBoostHUD.model.json",
+        "$ignoreUnknownInstances": true
+      }
+    },
+    "StarterPack": {
+      "$className": "StarterPack",
+      "$ignoreUnknownInstances": true,
+      "Glider": {
+        "$className": "Tool",
+        "$ignoreUnknownInstances": true,
+        "Script": {
+          "$path": "scripts/glider/Glider.server.lua",
+          "$ignoreUnknownInstances": true
+        },
+        "LocalScript": {
+          "$path": "scripts/glider/Glider.client.lua",
+          "$ignoreUnknownInstances": true
+        }
       }
     },
     "StarterPlayer": {
@@ -26,6 +74,18 @@
         "$ignoreUnknownInstances": true,
         "FlightHUD": {
           "$path": "scripts/FlightHUD.client.lua",
+          "$ignoreUnknownInstances": true
+        },
+        "PortalTravel": {
+          "$path": "scripts/PortalTravel.client.lua",
+          "$ignoreUnknownInstances": true
+        },
+        "GliderBoost": {
+          "$path": "scripts/GliderBoost.client.lua",
+          "$ignoreUnknownInstances": true
+        },
+        "MeadowWind": {
+          "$path": "scripts/MeadowWind.client.lua",
           "$ignoreUnknownInstances": true
         }
       }

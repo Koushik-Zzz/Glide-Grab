@@ -56,6 +56,7 @@ local function cleanTemplate(egg)
 	-- Keep mesh/texture/appearance children; use only our own gameplay code.
 	for _, child in ipairs(egg:GetDescendants()) do
 		if child:IsA("LuaSourceContainer") or child:IsA("ProximityPrompt")
+			or (child:IsA("BillboardGui") and child.Name == "PickupBeacon")
 			or child:IsA("JointInstance") or child:IsA("WeldConstraint")
 			or child:IsA("Constraint") then
 			child:Destroy()
@@ -155,9 +156,36 @@ pad.Parent = objects
 local deposit = makePrompt(pad, "Bank egg", "Home Nest")
 
 local carried = {}
+local random = Random.new()
+
+local function chooseSpawn(source)
+	local map = Workspace:FindFirstChild("Map")
+	local meadow = map and map:FindFirstChild("Meadow")
+	local spawns = meadow and meadow:FindFirstChild("EggSpawns")
+	local folder = spawns and spawns:FindFirstChild(source.Definition.Template)
+	local choices = {}
+	if folder then
+		for _, marker in ipairs(folder:GetChildren()) do
+			if marker:IsA("BasePart") and marker.Anchored and marker ~= source.LastSpot then
+				table.insert(choices, marker)
+			end
+		end
+	end
+	local _, size = eggBounds(source.Egg)
+	if #choices > 0 then
+		local spot = choices[random:NextInteger(1, #choices)]
+		source.LastSpot = spot
+		positionEgg(source.Egg, spot.CFrame * CFrame.new(0, size.Y / 2 + 0.35, 0))
+		source.Egg:SetAttribute("SpawnSpot", spot.Name)
+	else
+		local island = source.Definition.Island
+		positionEgg(source.Egg, island.CFrame * CFrame.new(0, island.Size.Y / 2 + size.Y / 2, 0))
+	end
+end
 
 local function validNearby(player, part, prompt)
 	if not prompt.Enabled or player.Parent ~= Players then return nil end
+	if player:GetAttribute("PortalTraveling") then return nil end
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	local root = character and character:FindFirstChild("HumanoidRootPart")
@@ -181,11 +209,26 @@ local function releaseEgg(player, respawnDelay)
 	-- Keep the source unavailable until its respawn timer finishes.
 	task.delay(respawnDelay, function()
 		if objects.Parent and source.Egg.Parent == hiddenEggs then
+			chooseSpawn(source)
 			source.Egg.Parent = objects
 			source.Prompt.Enabled = true
 		end
 	end)
 end
+
+-- Server-only interface: guardian catches go through the same ownership cleanup
+-- as banking/death. No client remote can drop or transfer an egg.
+local guardianCatch = Instance.new("BindableFunction")
+guardianCatch.Name = "GuardianCatch"
+guardianCatch.OnInvoke = function(player, cargo)
+	local record = carried[player]
+	if not record or record.Cargo ~= cargo or record.Source.Carrier ~= player then return false end
+	if cargo.Parent ~= player.Character or record.Source.Definition.Template ~= "UncommonEgg" then return false end
+	if player:GetAttribute("CurrentBiome") ~= "Meadow" or player:GetAttribute("PortalTraveling") then return false end
+	releaseEgg(player, 3)
+	return true
+end
+guardianCatch.Parent = script
 
 local function setupPlayer(player)
 	local stats = player:FindFirstChild("leaderstats")
@@ -221,7 +264,25 @@ for index, definition in ipairs(definitions) do
 	egg.Parent = objects
 	local prompt = makePrompt(promptPart, "Grab egg", definition.Name .. " | " .. definition.Value .. " coins")
 	local source = {Egg = egg, Prompt = prompt, Definition = definition, Carrier = nil}
+	chooseSpawn(source)
+	local beacon = Instance.new("BillboardGui")
+	beacon.Name = "PickupBeacon"
+	beacon.Size = UDim2.fromOffset(170, 44)
+	beacon.StudsOffset = Vector3.new(0, 4, 0)
+	beacon.MaxDistance = 70
+	beacon.AlwaysOnTop = false
+	beacon.Parent = promptPart
+	local caption = Instance.new("TextLabel")
+	caption.Size = UDim2.fromScale(1, 1)
+	caption.BackgroundTransparency = 1
+	caption.Text = definition.Name .. "\n" .. definition.Value .. " coins at camp"
+	caption.TextColor3 = definition.Color
+	caption.TextStrokeTransparency = 0.2
+	caption.TextSize = 17
+	caption.Font = Enum.Font.GothamBold
+	caption.Parent = beacon
 	prompt.Triggered:Connect(function(player)
+		if player:GetAttribute("CurrentBiome") ~= "Meadow" then return end
 		local root, humanoid = validNearby(player, promptPart, prompt)
 		if not root or source.Carrier or carried[player] then return end
 		local cargo = makeCargo(egg, root)
@@ -240,6 +301,7 @@ for index, definition in ipairs(definitions) do
 end
 
 deposit.Triggered:Connect(function(player)
+	if player:GetAttribute("CurrentBiome") ~= "Base Camp" then return end
 	local record = carried[player]
 	if not record or not validNearby(player, pad, deposit) then return end
 	if record.Source.Carrier ~= player or record.Cargo.Parent ~= player.Character then return end

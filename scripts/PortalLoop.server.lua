@@ -4,6 +4,7 @@
 -- These portals move the existing character in this place, preserving carried eggs.
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local function floorPart(parent, name)
@@ -88,48 +89,225 @@ local entryField, entryPrompt = makePortal("MeadowPortal", home, -22, -18,
 local exitField, exitPrompt = makePortal("CampReturnPortal", entrance, -12, 0,
 	Color3.fromRGB(80, 200, 255), "BASE CAMP", "Return to camp", "Bring your egg home to bank it")
 
-local cooldownUntil = {}
+-- Region membership is owned by the server. Crossing the gap cannot unlock a
+-- biome, and the client never supplies a destination or a biome name to travel.
+local regions = {
+	["Base Camp"] = {Floor = home, Center = home.Position + Vector3.new(0, 80, 0), HalfSize = Vector3.new(330, 260, 330)},
+	Meadow = {Floor = entrance, Center = entrance.Position + Vector3.new(90, 75, -245), HalfSize = Vector3.new(500, 330, 560)},
+}
+assert(not ReplicatedStorage:FindFirstChild("PortalTravel"), "Keep only one PortalLoop script")
+local remote = Instance.new("RemoteEvent")
+remote.Name = "PortalTravel"
+remote.Parent = ReplicatedStorage
+local states = {}
+local nextId = 0
 
-local function travel(player, field, prompt, destination, biome, allowCargo)
-	if not prompt.Enabled or player.Parent ~= Players then return end
+local function landing(biome)
+	local floor = regions[biome].Floor
+	return floor.CFrame * CFrame.new(0, floor.Size.Y / 2 + 4, 10)
+end
+
+local function livingCharacter(player)
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	local root = character and character:FindFirstChild("HumanoidRootPart")
-	if not humanoid or humanoid.Health <= 0 or not root or not root:IsA("BasePart") then return end
-	if (root.Position - field.Position).Magnitude > prompt.MaxActivationDistance then return end
-	if not allowCargo and character:FindFirstChild("CarriedEgg") then return end
-	local now = os.clock()
-	if now < (cooldownUntil[player] or 0) then return end
-	cooldownUntil[player] = now + 2
+	if humanoid and humanoid.Health > 0 and root and root:IsA("BasePart") then
+		return character, root
+	end
+	return nil, nil
+end
 
-	-- Arrive away from the portal prompt. PivotTo moves welded cargo with the
-	-- character; it does not respawn, unequip, or replace the player's glider.
-	character:PivotTo(destination.CFrame * CFrame.new(0, destination.Size.Y / 2 + 4, 10))
+local function edgeDistance(region, position)
+	local offset = position - region.Center
+	return math.min(region.HalfSize.X - math.abs(offset.X),
+		region.HalfSize.Y - math.abs(offset.Y), region.HalfSize.Z - math.abs(offset.Z))
+end
+
+local function stopVelocity(root)
 	root.AssemblyLinearVelocity = Vector3.zero
 	root.AssemblyAngularVelocity = Vector3.zero
-	player:SetAttribute("CurrentBiome", biome)
+end
+
+local function finish(player, state, record, success, message)
+	if state.Pending ~= record then return end
+	state.Pending = nil
+	local character, root = livingCharacter(player)
+	if character == record.Character then
+		if success then
+			state.Biome = record.Destination
+			state.LastSafe = landing(state.Biome)
+		else
+			-- A failed load stays at the departure point. Boundary recovery uses
+			-- the last safe in-region position instead of leaving players outside.
+			character:PivotTo(record.ReturnCFrame)
+		end
+		stopVelocity(root)
+	end
+	if record.Root.Parent then
+		record.Root.Anchored = record.WasAnchored
+	end
+	state.Cooldown = os.clock() + 2
+	state.Warned = false
+	player:SetAttribute("CurrentBiome", state.Biome)
+	player:SetAttribute("PortalTraveling", false)
+	if player.Parent == Players then
+		remote:FireClient(player, success and "Complete" or "Cancel", record.Id, message)
+	end
+end
+
+local function beginTravel(player, state, destination, recovery, field, prompt)
+	local character, root = livingCharacter(player)
+	if not state.Ready or state.Pending or not character or root.Anchored then return end
+	nextId = nextId + 1
+	local record = {
+		Id = nextId, Character = character, Root = root, WasAnchored = root.Anchored,
+		ReturnCFrame = recovery and state.LastSafe or character:GetPivot(),
+		Destination = destination, Target = landing(destination), Phase = "Loading",
+		Field = field, Prompt = prompt,
+	}
+	state.Pending = record
+	root.Anchored = true
+	stopVelocity(root)
+	player:SetAttribute("PortalTraveling", true)
+	remote:FireClient(player, "Prepare", record.Id, record.Target.Position, destination, recovery == true)
+	task.delay(10, function()
+		if states[player] == state and state.Pending == record and record.Phase == "Loading" then
+			finish(player, state, record, false, "The area couldn't load. Please try again.")
+		end
+	end)
+end
+
+local function usePortal(player, field, prompt, fromBiome, toBiome, allowCargo)
+	local state = states[player]
+	local character, root = livingCharacter(player)
+	if not state or not character or state.Pending or not prompt.Enabled then return end
+	if state.Biome ~= fromBiome or os.clock() < state.Cooldown then return end
+	if (root.Position - field.Position).Magnitude > prompt.MaxActivationDistance then return end
+	if not allowCargo and character:FindFirstChild("CarriedEgg") then
+		remote:FireClient(player, "Notice", "Bank your egg at the blue pad first.")
+		return
+	end
+	-- Meadow is the starter biome. Future unlock requirements belong here,
+	-- alongside the server-owned source-region and distance checks.
+	beginTravel(player, state, toBiome, false, field, prompt)
 end
 
 entryPrompt.Triggered:Connect(function(player)
-	travel(player, entryField, entryPrompt, entrance, "Meadow", false)
+	usePortal(player, entryField, entryPrompt, "Base Camp", "Meadow", false)
 end)
 exitPrompt.Triggered:Connect(function(player)
-	travel(player, exitField, exitPrompt, home, "Base Camp", true)
+	usePortal(player, exitField, exitPrompt, "Meadow", "Base Camp", true)
+end)
+
+remote.OnServerEvent:Connect(function(player, action, id)
+	local state = states[player]
+	if not state then return end
+	if action == "ClientReady" then
+		state.Ready = true
+		return
+	end
+	local record = state.Pending
+	if not record or record.Id ~= id then return end
+	local character, root = livingCharacter(player)
+	if character ~= record.Character then
+		finish(player, state, record, false)
+		return
+	end
+	if action == "Ready" and record.Phase == "Loading" then
+		if record.Field and (not record.Prompt.Enabled
+			or (root.Position - record.Field.Position).Magnitude > record.Prompt.MaxActivationDistance) then
+			finish(player, state, record, false, "Move closer to the portal and try again.")
+			return
+		end
+		record.Phase = "Arriving"
+		character:PivotTo(record.Target)
+		stopVelocity(root)
+		remote:FireClient(player, "Arrive", record.Id, record.Target.Position, record.Destination)
+		task.delay(6, function()
+			if states[player] == state and state.Pending == record then
+				finish(player, state, record, false, "Travel was interrupted. Please try again.")
+			end
+		end)
+	elseif action == "Arrived" and record.Phase == "Arriving" then
+		if (root.Position - record.Target.Position).Magnitude <= 14 then
+			finish(player, state, record, true)
+		end
+	elseif action == "Cancel" then
+		finish(player, state, record, false, "The area couldn't load. Please try again.")
+	end
 end)
 
 local function setupPlayer(player)
-	player:SetAttribute("CurrentBiome", "Base Camp")
-	player.CharacterAdded:Connect(function()
-		player:SetAttribute("CurrentBiome", "Base Camp")
-		cooldownUntil[player] = nil
-	end)
+	local state = {Biome = "Base Camp", Cooldown = 0, LastSafe = landing("Base Camp"), Ready = false}
+	states[player] = state
+	local function cancelTravel()
+		if state.Pending then
+			finish(player, state, state.Pending, false)
+		end
+	end
+	local function onCharacter(character)
+		cancelTravel()
+		state.Biome = "Base Camp"
+		state.LastSafe = landing("Base Camp")
+		state.Cooldown = 0
+		state.Warned = false
+		player:SetAttribute("CurrentBiome", state.Biome)
+		player:SetAttribute("PortalTraveling", false)
+		task.spawn(function()
+			local humanoid = character:WaitForChild("Humanoid", 5)
+			if humanoid and character == player.Character then
+				humanoid.Died:Connect(cancelTravel)
+			end
+		end)
+	end
+	player.CharacterAdded:Connect(onCharacter)
+	player.CharacterRemoving:Connect(cancelTravel)
+	player:SetAttribute("CurrentBiome", state.Biome)
+	player:SetAttribute("PortalTraveling", false)
+	if player.Character then
+		onCharacter(player.Character)
+	end
 end
 Players.PlayerAdded:Connect(setupPlayer)
 for _, player in ipairs(Players:GetPlayers()) do
 	setupPlayer(player)
 end
 Players.PlayerRemoving:Connect(function(player)
-	cooldownUntil[player] = nil
+	local state = states[player]
+	if state and state.Pending then
+		finish(player, state, state.Pending, false)
+	end
+	states[player] = nil
 end)
 
-print("Meadow portals ready: E to travel; glide for eggs, return to camp, then bank.")
+-- Generous flight volumes leave room to explore. The check runs on the server
+-- even if a client hides the warning or attempts to fly directly to another biome.
+task.spawn(function()
+	while objects.Parent do
+		for player, state in pairs(states) do
+			local character, root = livingCharacter(player)
+			if character and not state.Pending then
+				local distance = edgeDistance(regions[state.Biome], root.Position)
+				if distance < 0 then
+					if state.Ready and os.clock() >= state.Cooldown then
+						beginTravel(player, state, state.Biome, true)
+					else
+						character:PivotTo(state.LastSafe)
+						stopVelocity(root)
+					end
+				elseif distance < 75 then
+					if not state.Warned then
+						state.Warned = true
+						remote:FireClient(player, "Notice", "Edge of " .. state.Biome .. " — turn back! Use portals to travel.")
+					end
+				elseif distance > 95 then
+					state.Warned = false
+					state.LastSafe = character:GetPivot()
+				end
+			end
+		end
+		task.wait(0.25)
+	end
+end)
+
+print("Meadow portals ready: streaming, travel fades, and server biome boundaries enabled.")

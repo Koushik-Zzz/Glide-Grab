@@ -5,6 +5,7 @@
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
@@ -134,6 +135,63 @@ frame(eggIcon, "Spot2", UDim2.fromOffset(15, 22), UDim2.fromOffset(6, 6), colors
 local cargoName = label(cargoCard, "EggName", UDim2.fromOffset(58, 7), UDim2.new(1, -70, 0, 24), "Common Egg", 17, colors.ink, Enum.Font.GothamBold)
 local cargoValue = label(cargoCard, "Value", UDim2.fromOffset(58, 31), UDim2.new(1, -70, 0, 17), "+10 coins when banked", 12, colors.goldEdge)
 
+local windCard = frame(canvas, "WindWarning", UDim2.new(0.5, 0, 0, 84), UDim2.fromOffset(326, 42), colors.ink, 12)
+windCard.AnchorPoint = Vector2.new(0.5, 0)
+windCard.Visible = false
+local windText = label(windCard, "Status", UDim2.fromOffset(12, 4), UDim2.new(1, -24, 1, -8), "", 14, colors.mint, Enum.Font.GothamBold)
+windText.TextXAlignment = Enum.TextXAlignment.Center
+windText.TextWrapped = true
+
+local pickupNotice = label(canvas, "PickupNotice", UDim2.new(0.5, 0, 1, -192), UDim2.fromOffset(320, 32), "", 20, colors.mint, Enum.Font.GothamBold)
+pickupNotice.AnchorPoint = Vector2.new(0.5, 0)
+pickupNotice.TextXAlignment = Enum.TextXAlignment.Center
+pickupNotice.TextStrokeTransparency = 0.25
+pickupNotice.Visible = false
+local pickupVersion = 0
+local pickupTween = nil
+
+local function showPickup(name)
+	pickupVersion = pickupVersion + 1
+	local version = pickupVersion
+	if pickupTween then
+		pickupTween:Cancel()
+	end
+	pickupNotice.Text = "Got " .. name .. "!"
+	pickupNotice.TextTransparency = 0
+	pickupNotice.TextStrokeTransparency = 0.25
+	pickupNotice.Visible = true
+	task.delay(1.1, function()
+		if pickupVersion ~= version then return end
+		pickupTween = TweenService:Create(pickupNotice, TweenInfo.new(0.35), {TextTransparency = 1, TextStrokeTransparency = 1})
+		pickupTween:Play()
+	end)
+	task.delay(1.5, function()
+		if pickupVersion == version then
+			pickupNotice.Visible = false
+		end
+	end)
+end
+
+local function refreshWind()
+	local state = player:GetAttribute("MeadowWindState")
+	local guardianMessage = player:GetAttribute("GuardianMessage")
+	if guardianMessage and guardianMessage ~= "" and not player:GetAttribute("PortalTraveling") then
+		windCard.Visible = true
+		windText.Text = guardianMessage
+		windText.TextColor3 = colors.amber
+		return
+	end
+	windCard.Visible = state ~= nil and state ~= "" and not player:GetAttribute("PortalTraveling")
+	windText.Text = state == "Gust" and "CROSSWIND → steer against it or go around"
+		or state == "Warning" and "Wind picking up — get ready to steer!"
+		or "Wind is calm — a good time to cross"
+	windText.TextColor3 = state == "Calm" and colors.mint or colors.amber
+end
+player:GetAttributeChangedSignal("MeadowWindState"):Connect(refreshWind)
+player:GetAttributeChangedSignal("GuardianMessage"):Connect(refreshWind)
+player:GetAttributeChangedSignal("PortalTraveling"):Connect(refreshWind)
+refreshWind()
+
 local rewardLabel = label(canvas, "CoinReward", UDim2.fromOffset(24, 80), UDim2.fromOffset(100, 35), "", 25, colors.gold, Enum.Font.GothamBlack)
 rewardLabel.Visible = false
 local rewardStroke = Instance.new("UIStroke")
@@ -144,10 +202,28 @@ rewardStroke.Parent = rewardLabel
 local function layout()
 	local width = canvas.AbsoluteSize.X
 	if width <= 0 then return end
+	local compact = canvas.AbsoluteSize.Y < 480 and width >= 460
 	-- Stack the banner below coins on narrow windows and phone screens.
+	missionCard.AnchorPoint = Vector2.new(0.5, 0)
+	windCard.AnchorPoint = Vector2.new(0.5, 0)
 	missionCard.Position = UDim2.new(0.5, 0, 0, width < 760 and 86 or 14)
 	missionCard.Size = UDim2.fromOffset(math.min(326, math.max(180, width - 32)), 58)
+	windCard.Position = UDim2.new(0.5, 0, 0, width < 760 and 156 or 84)
+	windCard.Size = UDim2.fromOffset(math.min(326, math.max(180, width - 32)), 42)
 	cargoCard.Size = UDim2.fromOffset(math.min(268, math.max(180, width - 32)), 56)
+	-- Leave a centered slot for the boost action above the default hotbar on touch/narrow screens.
+	local centeredBoost = not compact and (width < 760 or UserInputService.TouchEnabled)
+	cargoCard.Position = UDim2.new(0.5, 0, 1, centeredBoost and -158 or -90)
+	pickupNotice.Position = UDim2.new(0.5, 0, 1, centeredBoost and -238 or -192)
+	if compact then
+		missionCard.AnchorPoint = Vector2.new(1, 0)
+		missionCard.Position = UDim2.new(1, -16, 0, 14)
+		missionCard.Size = UDim2.fromOffset(math.min(326, width - 214), 58)
+		windCard.AnchorPoint = Vector2.zero
+		windCard.Position = UDim2.fromOffset(16, 84)
+		windCard.Size = UDim2.fromOffset(math.min(326, width - 228), 42)
+		pickupNotice.Position = UDim2.new(0.5, 0, 1, -86)
+	end
 end
 canvas:GetPropertyChangedSignal("AbsoluteSize"):Connect(layout)
 gui.Parent = playerGui
@@ -217,6 +293,7 @@ local function refreshCargo()
 		missionCard.BackgroundColor3 = colors.amber
 		missionIcon.BackgroundColor3 = colors.goldEdge
 		if not wasVisible then
+			showPickup(cargoName.Text)
 			if cargoTween then
 				cargoTween:Cancel()
 			end
