@@ -70,7 +70,9 @@ The workshop is public but its existing private boost levels, prices and cooldow
 | `scripts/combat/Rules.lua` | Alive/biome/arrival eligibility, ground clearance, facing and line-of-sight queries. |
 | `scripts/combat/Impact.lua` | Temporary LinearVelocity/stun, restoration and interruption cleanup. |
 | `scripts/SkyCombat.client.lua` | Keyboard/gamepad/button intents, shop text and ability presentation. |
-| `scripts/combat_client/Effects.lua` | Brief local bat/hand swings without gameplay authority. |
+| `scripts/combat/HeldBat.lua` | Persistent left-hand prop owned by private purchase entitlement, with respawn/death cleanup. |
+| `scripts/combat_client/BatPose.lua` | Left-arm hold/swing evaluation for each viewer, driven by accepted server swing time. |
+| `scripts/combat_client/Effects.lua` | Brief local slap effects and bat-pose lifecycle, without gameplay authority. |
 | `ui/SkyCombatHUD.model.json` | Editable four-action GUI. |
 
 EggLoop's server-only HasCargo, ProtectCargo and TryAirSteal bindings use private Claims records. Claims transfers a record atomically while preserving Economy/EggId and the exclusive source lock. EggLoop replaces welds/death binding so the former owner's lifecycle cannot release the new owner's cargo. Glider/boost read server character deadlines to yield during combat. A guardian slap clears a player stun before taking over physical motion; player actions exclude active guardian knockback.

@@ -1,13 +1,16 @@
 -- Local swing visuals follow the hand; they do not affect collision or hits.
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local BatPose = require(script.Parent:WaitForChild("BatPose"))
 local Effects = {}
 function Effects.new()
 	local assets = ReplicatedStorage:WaitForChild("CombatAssets")
 	local active = {}
 	local api = {}
+	local batPose = BatPose.new()
 	function api:play(player, kind)
-		if kind ~= "Bat" and kind ~= "Slap" then return end
+		-- Owned bats are persistent hand-gripped models with a left-arm pose.
+		if kind ~= "Slap" then return end
 		local c = player.Character
 		local hand = c and (c:FindFirstChild("RightHand") or c:FindFirstChild("Right Arm"))
 		local source = assets:FindFirstChild(kind)
@@ -31,6 +34,7 @@ function Effects.new()
 		end)
 	end
 	function api:destroy()
+		batPose:destroy()
 		for record in pairs(active) do
 			record.Connection:Disconnect()
 			record.Model:Destroy()

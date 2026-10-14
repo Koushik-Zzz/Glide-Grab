@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local modules = script.Parent:WaitForChild("CombatModules")
 local Config, Rules, Impact = require(modules.Config), require(modules.Rules), require(modules.Impact)
+local HeldBat = require(modules:WaitForChild("HeldBat"))
 local eggLoop = script.Parent:WaitForChild("EggLoop")
 local steal = eggLoop:WaitForChild("TryAirSteal")
 local hasCargo = eggLoop:WaitForChild("HasCargo")
@@ -26,6 +27,9 @@ local function notice(p, text)
 end
 local function bind(p)
 	profiles[p] = {Bat = false, Charges = 0, Ready = {}, LastRequest = 0, LastBuy = 0, HitReady = 0}
+	profiles[p].Presentation = HeldBat.bind(p, function()
+		return profiles[p] ~= nil and profiles[p].Bat
+	end)
 	p:SetAttribute("OwnsBat", false)
 	p:SetAttribute("EggShieldCharges", 0)
 	p.CharacterRemoving:Connect(function()
@@ -38,6 +42,9 @@ for _, p in ipairs(Players:GetPlayers()) do
 end
 Players.PlayerRemoving:Connect(function(p)
 	Impact.clear(p)
+	if profiles[p] then
+		profiles[p].Presentation:destroy()
+	end
 	profiles[p], noticeVersions[p] = nil, nil
 end)
 local function effect(p, action)
@@ -105,6 +112,9 @@ remote.OnServerEvent:Connect(function(p, ...)
 		return
 	end
 	local weapon = Config.Weapons[action]
+	if action == "Bat" then
+		character:SetAttribute("BatSwingStartedAt", now)
+	end
 	effect(p, action)
 	local originalCharacter = character
 	task.delay(weapon.Windup, function()
@@ -152,6 +162,7 @@ local function purchase(p, kind, prompt)
 	if kind == "Bat" then
 		state.Bat = true
 		p:SetAttribute("OwnsBat", true)
+		state.Presentation:refresh()
 		notice(p, "Bat purchased! R to swing; your glider stays equipped.")
 	else
 		state.Charges += 1
