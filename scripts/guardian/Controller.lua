@@ -41,6 +41,10 @@ function Controller.start(ownerScript)
 	}
 	local function transition(nextState, duration)
 		state = nextState
+		if state == "Return" then
+			flight:beginReturn()
+			duration = config.ReturnTimeout
+		end
 		deadline = Workspace:GetServerTimeNow() + (duration or 0)
 		bird:SetAttribute("State", state)
 		bird.Body.Color = state == "Windup" and Color3.fromRGB(255, 185, 65) or originalColor
@@ -76,25 +80,31 @@ function Controller.start(ownerScript)
 			and not target:GetAttribute("PortalTraveling")
 	end
 
-	local handlers = {}
-	handlers.Patrol = function(now, dt)
-		flight:moveToward(config.HomePosition + Vector3.new(math.cos(now * 0.65) * 18,
-			math.sin(now) * 2, math.sin(now * 0.65) * 18), config.PatrolSpeed, dt)
+	local function acquireTarget(requireClearApproach)
 		for _, player in ipairs(Players:GetPlayers()) do
 			local character = player.Character
 			local egg = character and character:FindFirstChild("CarriedEgg")
 			local candidateRoot = character and character:FindFirstChild("HumanoidRootPart")
 			if egg and candidateRoot and egg:GetAttribute("EggName") == "Uncommon Egg"
-				and (candidateRoot.Position - config.HomePosition).Magnitude < config.LeashRadius then
+				and (candidateRoot.Position - config.HomePosition).Magnitude < config.LeashRadius
+				and (not requireClearApproach or not flight:blocked(flight.Position, candidateRoot.Position)) then
 				target, cargo, root = player, egg, candidateRoot
 				if validTarget() then
 					transition("Alert", config.AlertSeconds)
-					break
+					return true
 				else
 					target, cargo, root = nil, nil, nil
 				end
 			end
 		end
+		return false
+	end
+
+	local handlers = {}
+	handlers.Patrol = function(now, dt)
+		flight:moveToward(config.HomePosition + Vector3.new(math.cos(now * 0.65) * 18,
+			math.sin(now) * 2, math.sin(now * 0.65) * 18), config.PatrolSpeed, dt)
+		acquireTarget()
 	end
 	handlers.Alert = function(now)
 		if now >= deadline then
@@ -165,9 +175,10 @@ function Controller.start(ownerScript)
 			transition("Return")
 		end
 	end
-	handlers.Return = function(_, dt)
-		flight:moveToward(config.HomePosition, config.ReturnSpeed, dt)
-		if (flight.Position - config.HomePosition).Magnitude < 3 then
+	handlers.Return = function(now, dt)
+		-- Finish the escape from an overhang before chasing a carrier behind it.
+		if acquireTarget(true) then return end
+		if flight:returnHome(dt) or (now >= deadline and flight:recoverHome()) then
 			transition("Patrol")
 		end
 	end

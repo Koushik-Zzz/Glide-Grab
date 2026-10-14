@@ -12,6 +12,10 @@ function Flight.new(model, config)
 	self.Query = RaycastParams.new()
 	self.Query.FilterType = Enum.RaycastFilterType.Exclude
 	self.Query.RespectCanCollide = true
+	self.ClearanceQuery = OverlapParams.new()
+	self.ClearanceQuery.FilterType = Enum.RaycastFilterType.Exclude
+	self.ClearanceQuery.RespectCanCollide = true
+	self.ClearanceQuery.MaxParts = 1
 	return self
 end
 
@@ -23,6 +27,7 @@ function Flight:excludeCharacters(players)
 		end
 	end
 	self.Query.FilterDescendantsInstances = excluded
+	self.ClearanceQuery.FilterDescendantsInstances = excluded
 end
 
 function Flight:blocked(from, to)
@@ -35,7 +40,7 @@ function Flight:clipAtObstacle(goal)
 	if not hit then return goal, false end
 	local delta = goal - self.Position
 	-- Keep the legal part of a fast step: it may hit a player before the floor.
-	return self.Position + delta.Unit * math.max(0, hit.Distance - 0.05), true
+	return self.Position + delta.Unit * math.max(0, hit.Distance - 0.35), true
 end
 
 function Flight:moveToward(goal, speed, dt)
@@ -45,17 +50,102 @@ function Flight:moveToward(goal, speed, dt)
 	end
 	local direction = delta.Unit
 	local step = direction * math.min(delta.Magnitude, speed * dt)
-	if self:blocked(self.Position, self.Position + step) then
+	local hit = self:blocked(self.Position, self.Position + step)
+	if hit then
 		self.Stuck += dt
-		step = Vector3.new(0, speed * dt, 0)
-		if self:blocked(self.Position, self.Position + step) then
-			return
+		local outward = Vector3.new(hit.Normal.X, 0, hit.Normal.Z)
+		local slide = direction - hit.Normal * math.min(0, direction:Dot(hit.Normal))
+		local alternatives = {Vector3.yAxis, outward + Vector3.yAxis * 0.35, slide + hit.Normal * 0.35}
+		local found = false
+		for _, candidate in ipairs(alternatives) do
+			if candidate.Magnitude > 0.1 then
+				local alternative = candidate.Unit * speed * dt
+				if not self:blocked(self.Position, self.Position + alternative) then
+					step, found = alternative, true
+					break
+				end
+			end
 		end
+		if not found then return end
 	else
 		self.Stuck = 0
 	end
 	self.Position += step
 	self.Facing = direction
+end
+
+function Flight:beginReturn()
+	self.ReturnExit = nil
+	self.ReturnHeight = math.max(self.Position.Y, self.Config.HomePosition.Y) + self.Config.ReturnClearance
+	self.ReturnStage = "Rise"
+end
+
+function Flight:findReturnExit()
+	local best, bestScore = nil, -math.huge
+	-- Look around a roof rather than repeatedly trying to fly through its underside.
+	-- Probe only when planning a detour; cache the chosen waypoint until reached.
+	for index = 0, 7 do
+		local angle = index * math.pi / 4
+		local direction = Vector3.new(math.cos(angle), 0, math.sin(angle))
+		local hit = self:blocked(self.Position, self.Position + direction * 72)
+		local distance = hit and math.max(0, hit.Distance - 0.35) or 72
+		if distance > 4 then
+			local candidate = self.Position + direction * distance
+			local above = Vector3.new(candidate.X, self.ReturnHeight, candidate.Z)
+			local clearUp = not self:blocked(candidate, above)
+			local score = (clearUp and 1000 or 0) + distance
+				- (candidate - self.Config.HomePosition).Magnitude * 0.1
+			if score > bestScore then
+				best, bestScore = candidate, score
+			end
+		end
+	end
+	return best
+end
+
+function Flight:returnHome(dt)
+	local home = self.Config.HomePosition
+	if self.ReturnStage == "Rise" then
+		if self.ReturnExit then
+			self:moveToward(self.ReturnExit, self.Config.ReturnSpeed, dt)
+			if (self.Position - self.ReturnExit).Magnitude < 3 or self.Stuck > 0.5 then
+				self.ReturnExit = nil
+				self.Stuck = 0
+			end
+		elseif self.Position.Y < self.ReturnHeight - 1 then
+			local above = Vector3.new(self.Position.X, self.ReturnHeight, self.Position.Z)
+			if self:blocked(self.Position, above) then
+				self.ReturnExit = self:findReturnExit()
+			end
+			if not self.ReturnExit then
+				self:moveToward(above, self.Config.ReturnSpeed, dt)
+			end
+		else
+			self.ReturnStage = "Cross"
+		end
+	elseif self.ReturnStage == "Cross" then
+		local aboveHome = Vector3.new(home.X, self.ReturnHeight, home.Z)
+		self:moveToward(aboveHome, self.Config.ReturnSpeed, dt)
+		if (self.Position - aboveHome).Magnitude < 3 then
+			self.ReturnStage = "Descend"
+		end
+	else
+		self:moveToward(home, self.Config.ReturnSpeed, dt)
+	end
+	return (self.Position - home).Magnitude < 3
+end
+
+function Flight:recoverHome()
+	-- Last resort for an enclosed/trapped return. Never used during an attack;
+	-- only reset to an unoccupied nest-area position, not through a wall to a player.
+	for _, lift in ipairs({0, 16, 32, 64}) do
+		local candidate = self.Config.HomePosition + Vector3.yAxis * lift
+		if #Workspace:GetPartBoundsInRadius(candidate, 2.35, self.ClearanceQuery) == 0 then
+			self.Position, self.Stuck, self.ReturnExit = candidate, 0, nil
+			return true
+		end
+	end
+	return false
 end
 
 function Flight:aimDash(root)

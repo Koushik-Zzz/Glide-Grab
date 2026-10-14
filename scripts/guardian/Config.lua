@@ -14,6 +14,8 @@ local defaults = {
 	RecoverSeconds = 0.6,
 	PatrolSpeed = 32,
 	ReturnSpeed = 115,
+	ReturnClearance = 20,
+	ReturnTimeout = 8,
 	KnockbackSpeed = 72,
 	KnockbackLift = 26,
 	KnockbackSeconds = 0.42,
@@ -24,6 +26,7 @@ local limits = {
 	DashOvershoot = {10, 50}, MaxLeadSeconds = {0.1, 0.8}, MaxLeadDistance = {10, 80},
 	HitRadius = {4, 9}, RecoverSeconds = {0.3, 2}, PatrolSpeed = {10, 50},
 	ReturnSpeed = {40, 160}, KnockbackSpeed = {20, 100}, KnockbackLift = {10, 40},
+	ReturnClearance = {12, 60}, ReturnTimeout = {4, 15},
 	KnockbackSeconds = {0.15, 0.6},
 }
 
