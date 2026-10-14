@@ -28,6 +28,7 @@ local function request()
 		return
 	end
 	if now < (character:GetAttribute("GuardianKnockbackUntil") or 0)
+		or now < (character:GetAttribute("CombatStunnedUntil") or 0)
 		or now < (player:GetAttribute("BoostReadyAt") or 0) or now - lastRequest < 0.2 then return end
 	lastRequest = now
 	remote:FireServer()

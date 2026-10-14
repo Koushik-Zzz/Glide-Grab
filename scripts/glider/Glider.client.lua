@@ -114,7 +114,8 @@ function Fly()
 		Humanoid.AutoRotate = false
 				
 		while Flying and Torso and Humanoid and Humanoid.Health > 0 do
-			local KnockbackUntil = Character:GetAttribute("GuardianKnockbackUntil")
+			local KnockbackUntil = math.max(Character:GetAttribute("GuardianKnockbackUntil") or 0,
+				Character:GetAttribute("CombatKnockbackUntil") or 0)
 			local KnockedBack = type(KnockbackUntil) == "number"
 				and game:GetService("Workspace"):GetServerTimeNow() < KnockbackUntil
 			if KnockedBack then
@@ -278,7 +279,8 @@ function Equipped(Mouse)
 	Mouse.KeyDown:connect(function(Key)
 		local Key = string.lower(Key)
 		local ByteKey = string.byte(Key)
-		if ByteKey == string.byte(" ") and not Debounce then
+		if ByteKey == string.byte(" ") and not Debounce
+			and game:GetService("Workspace"):GetServerTimeNow() >= (Character:GetAttribute("CombatStunnedUntil") or 0) then
 			if Flying then
 				StopFlying()
 			elseif not Flying then

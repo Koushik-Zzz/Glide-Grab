@@ -6,6 +6,8 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local Progression = require(script.Parent:WaitForChild("ProgressionModules"):WaitForChild("Progression"))
+local campAnchor = Workspace:WaitForChild("SharedCamp"):WaitForChild("Anchors"):WaitForChild("MeadowPortal")
 
 local function floorPart(parent, name)
 	local part = parent:WaitForChild(name, 10)
@@ -43,7 +45,8 @@ local function makePortal(name, floor, x, z, color, title, action, description)
 	local model = Instance.new("Model")
 	model.Name = name
 	model.Parent = objects
-	local center = floor.CFrame * CFrame.new(x, floor.Size.Y / 2 + 6, z)
+	local center = name == "MeadowPortal" and campAnchor.CFrame
+		or floor.CFrame * CFrame.new(x, floor.Size.Y / 2 + 6, z)
 	part(model, "LeftPost", Vector3.new(1.5, 12, 1.5), center * CFrame.new(-5, 0, 0), color, Enum.Material.Neon)
 	part(model, "RightPost", Vector3.new(1.5, 12, 1.5), center * CFrame.new(5, 0, 0), color, Enum.Material.Neon)
 	part(model, "Top", Vector3.new(11.5, 1.5, 1.5), center * CFrame.new(0, 6, 0), color, Enum.Material.Neon)
@@ -86,8 +89,10 @@ end
 
 local entryField, entryPrompt = makePortal("MeadowPortal", home, -22, -18,
 	Color3.fromRGB(100, 255, 154), "MEADOW", "Enter Meadow", "Glide between islands and find eggs")
+entryField:SetAttribute("RequiredRebirths", campAnchor:GetAttribute("RequiredRebirths"))
+entryPrompt.ObjectText = "Meadow • " .. tostring(campAnchor:GetAttribute("RequiredRebirths")) .. "+ rebirths"
 local exitField, exitPrompt = makePortal("CampReturnPortal", entrance, -12, 0,
-	Color3.fromRGB(80, 200, 255), "BASE CAMP", "Return to camp", "Bring your egg home to bank it")
+	Color3.fromRGB(80, 200, 255), "BASE CAMP", "Return to camp", "Bring your egg home to display it")
 
 -- Region membership is owned by the server. Crossing the gap cannot unlock a
 -- biome, and the client never supplies a destination or a biome name to travel.
@@ -182,13 +187,16 @@ local function usePortal(player, field, prompt, fromBiome, toBiome, allowCargo)
 	local character, root = livingCharacter(player)
 	if not state or not character or state.Pending or not prompt.Enabled then return end
 	if state.Biome ~= fromBiome or os.clock() < state.Cooldown then return end
-	if (root.Position - field.Position).Magnitude > prompt.MaxActivationDistance then return end
+	if not ((root.Position - field.Position).Magnitude <= prompt.MaxActivationDistance) then return end
 	if not allowCargo and character:FindFirstChild("CarriedEgg") then
-		remote:FireClient(player, "Notice", "Bank your egg at the blue pad first.")
+		remote:FireClient(player, "Notice", "Place your carried egg on a pillow or the blue pad first.")
 		return
 	end
-	-- Meadow is the starter biome. Future unlock requirements belong here,
-	-- alongside the server-owned source-region and distance checks.
+	if toBiome == "Meadow" and not Progression.canEnter(player, field:GetAttribute("RequiredRebirths")) then
+		remote:FireClient(player, "Notice", "This portal requires " .. tostring(field:GetAttribute("RequiredRebirths"))
+			.. "+ rebirths. You have " .. tostring(Progression.getRebirths(player)) .. ".")
+		return
+	end
 	beginTravel(player, state, toBiome, false, field, prompt)
 end
 
@@ -215,8 +223,12 @@ remote.OnServerEvent:Connect(function(player, action, id)
 	end
 	if action == "Ready" and record.Phase == "Loading" then
 		if record.Field and (not record.Prompt.Enabled
-			or (root.Position - record.Field.Position).Magnitude > record.Prompt.MaxActivationDistance) then
+			or not ((root.Position - record.Field.Position).Magnitude <= record.Prompt.MaxActivationDistance)) then
 			finish(player, state, record, false, "Move closer to the portal and try again.")
+			return
+		end
+		if record.Field == entryField and not Progression.canEnter(player, entryField:GetAttribute("RequiredRebirths")) then
+			finish(player, state, record, false, "You no longer meet this portal's rebirth requirement.")
 			return
 		end
 		record.Phase = "Arriving"

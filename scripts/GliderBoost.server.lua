@@ -36,9 +36,11 @@ end
 local function flightEligible(player, character)
 	local glider = character:FindFirstChild("Glider")
 	local untilTime = character:GetAttribute("GuardianKnockbackUntil")
+	local combatUntil = character:GetAttribute("CombatStunnedUntil") or 0
 	return glider and glider:IsA("Tool") and glider:GetAttribute("IsGliding") == true
 		and not player:GetAttribute("PortalTraveling")
 		and not (type(untilTime) == "number" and untilTime > Workspace:GetServerTimeNow())
+		and combatUntil <= Workspace:GetServerTimeNow()
 end
 
 local function bind(player)

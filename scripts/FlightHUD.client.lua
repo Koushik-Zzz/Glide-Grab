@@ -86,7 +86,7 @@ local function label(parent, name, position, size, text, fontSize, color, font)
 end
 
 -- All icons are made from UI shapes, so they need no uploaded image assets.
-local coinCard = frame(canvas, "Coins", UDim2.fromOffset(16, 14), UDim2.fromOffset(166, 58), colors.cream, 18)
+local coinCard = frame(canvas, "Coins", UDim2.fromOffset(16, 14), UDim2.fromOffset(166, 78), colors.cream, 18)
 outline(coinCard, colors.ink, 3)
 local coinScale = Instance.new("UIScale")
 coinScale.Parent = coinCard
@@ -103,6 +103,18 @@ local amountLimit = Instance.new("UITextSizeConstraint")
 amountLimit.MinTextSize = 14
 amountLimit.MaxTextSize = 26
 amountLimit.Parent = coinLabel
+local incomeLabel = label(coinCard, "Income", UDim2.fromOffset(12, 55), UDim2.fromOffset(142, 17), "+0/sec • Ready: 0", 11, colors.teal, Enum.Font.GothamBold)
+incomeLabel.TextScaled = true
+local incomeLimit = Instance.new("UITextSizeConstraint")
+incomeLimit.MinTextSize = 9
+incomeLimit.MaxTextSize = 11
+incomeLimit.Parent = incomeLabel
+local function refreshIncome()
+	incomeLabel.Text = string.format("+%d/sec • Ready: %d", player:GetAttribute("EggIncomeRate") or 0, player:GetAttribute("EggIncomePending") or 0)
+end
+player:GetAttributeChangedSignal("EggIncomeRate"):Connect(refreshIncome)
+player:GetAttributeChangedSignal("EggIncomePending"):Connect(refreshIncome)
+refreshIncome()
 
 local missionCard = frame(canvas, "Objective", UDim2.new(0.5, 0, 0, 14), UDim2.fromOffset(326, 58), colors.mint, 18)
 missionCard.AnchorPoint = Vector2.new(0.5, 0)
@@ -133,7 +145,7 @@ outline(eggIcon, colors.goldEdge, 2)
 frame(eggIcon, "Spot1", UDim2.fromOffset(5, 12), UDim2.fromOffset(7, 8), colors.gold, 7)
 frame(eggIcon, "Spot2", UDim2.fromOffset(15, 22), UDim2.fromOffset(6, 6), colors.gold, 6)
 local cargoName = label(cargoCard, "EggName", UDim2.fromOffset(58, 7), UDim2.new(1, -70, 0, 24), "Common Egg", 17, colors.ink, Enum.Font.GothamBold)
-local cargoValue = label(cargoCard, "Value", UDim2.fromOffset(58, 31), UDim2.new(1, -70, 0, 17), "+10 coins when banked", 12, colors.goldEdge)
+local cargoValue = label(cargoCard, "Value", UDim2.fromOffset(58, 31), UDim2.new(1, -70, 0, 17), "+1 coin/sec when placed", 12, colors.goldEdge)
 
 local windCard = frame(canvas, "WindWarning", UDim2.new(0.5, 0, 0, 84), UDim2.fromOffset(326, 42), colors.ink, 12)
 windCard.AnchorPoint = Vector2.new(0.5, 0)
@@ -173,8 +185,23 @@ local function showPickup(name)
 end
 
 local function refreshWind()
+	local combatMessage = player:GetAttribute("PvPMessage")
+	if combatMessage and not player:GetAttribute("PortalTraveling") then
+		windCard.Visible = true
+		windText.Text = combatMessage
+		windText.TextColor3 = colors.amber
+		return
+	end
 	local state = player:GetAttribute("MeadowWindState")
 	local guardianMessage = player:GetAttribute("GuardianMessage")
+	local collectionMessage = player:GetAttribute("CollectionMessage")
+	if collectionMessage and player:GetAttribute("CurrentBiome") == "Base Camp"
+		and not player:GetAttribute("PortalTraveling") then
+		windCard.Visible = true
+		windText.Text = collectionMessage
+		windText.TextColor3 = colors.mint
+		return
+	end
 	if guardianMessage and guardianMessage ~= "" and not player:GetAttribute("PortalTraveling") then
 		windCard.Visible = true
 		windText.Text = guardianMessage
@@ -189,7 +216,10 @@ local function refreshWind()
 end
 player:GetAttributeChangedSignal("MeadowWindState"):Connect(refreshWind)
 player:GetAttributeChangedSignal("GuardianMessage"):Connect(refreshWind)
+player:GetAttributeChangedSignal("PvPMessage"):Connect(refreshWind)
 player:GetAttributeChangedSignal("PortalTraveling"):Connect(refreshWind)
+player:GetAttributeChangedSignal("CollectionMessage"):Connect(refreshWind)
+player:GetAttributeChangedSignal("CurrentBiome"):Connect(refreshWind)
 refreshWind()
 
 local rewardLabel = label(canvas, "CoinReward", UDim2.fromOffset(24, 80), UDim2.fromOffset(100, 35), "", 25, colors.gold, Enum.Font.GothamBlack)
@@ -202,13 +232,13 @@ rewardStroke.Parent = rewardLabel
 local function layout()
 	local width = canvas.AbsoluteSize.X
 	if width <= 0 then return end
-	local compact = canvas.AbsoluteSize.Y < 480 and width >= 460
+	local compact = canvas.AbsoluteSize.Y < 540 and width >= 460
 	-- Stack the banner below coins on narrow windows and phone screens.
 	missionCard.AnchorPoint = Vector2.new(0.5, 0)
 	windCard.AnchorPoint = Vector2.new(0.5, 0)
-	missionCard.Position = UDim2.new(0.5, 0, 0, width < 760 and 86 or 14)
+	missionCard.Position = UDim2.new(0.5, 0, 0, width < 760 and 104 or 14)
 	missionCard.Size = UDim2.fromOffset(math.min(326, math.max(180, width - 32)), 58)
-	windCard.Position = UDim2.new(0.5, 0, 0, width < 760 and 156 or 84)
+	windCard.Position = UDim2.new(0.5, 0, 0, width < 760 and 174 or 84)
 	windCard.Size = UDim2.fromOffset(math.min(326, math.max(180, width - 32)), 42)
 	cargoCard.Size = UDim2.fromOffset(math.min(268, math.max(180, width - 32)), 56)
 	-- Leave a centered slot for the boost action above the default hotbar on touch/narrow screens.
@@ -220,7 +250,7 @@ local function layout()
 		missionCard.Position = UDim2.new(1, -16, 0, 14)
 		missionCard.Size = UDim2.fromOffset(math.min(326, width - 214), 58)
 		windCard.AnchorPoint = Vector2.zero
-		windCard.Position = UDim2.fromOffset(16, 84)
+		windCard.Position = UDim2.fromOffset(16, 104)
 		windCard.Size = UDim2.fromOffset(math.min(326, width - 228), 42)
 		pickupNotice.Position = UDim2.new(0.5, 0, 1, -86)
 	end
@@ -249,7 +279,7 @@ local function showReward(gain)
 	end
 	local narrow = canvas.AbsoluteSize.X < 760
 	local rewardX = narrow and math.min(196, canvas.AbsoluteSize.X - 112) or 24
-	local rewardY = narrow and 25 or 80
+	local rewardY = narrow and 25 or 108
 	rewardLabel.Text = "+" .. tostring(gain)
 	rewardLabel.Position = UDim2.fromOffset(rewardX, rewardY)
 	rewardLabel.TextTransparency = 0
@@ -286,10 +316,14 @@ local function refreshCargo()
 	local wasVisible = cargoCard.Visible
 	cargoCard.Visible = carrying and true or false
 	if carrying then
-		cargoName.Text = egg:GetAttribute("EggName") or "Common Egg"
-		cargoValue.Text = "+" .. tostring(egg:GetAttribute("BankValue") or 10) .. " coins when banked"
-		missionTitle.Text = inMeadow and "Fly back to camp!" or "Bank your egg!"
-		missionHint.Text = inMeadow and "Fly to the blue return portal" or "Bank your egg at the blue pad"
+		local tier = egg:GetAttribute("EggTier")
+		cargoName.Text = (egg:GetAttribute("EggName") or "Common Egg")
+			.. (tier and tier ~= "Standard" and " • " .. tier or "")
+		cargoValue.Text = "+" .. tostring(egg:GetAttribute("IncomeRate") or 1) .. " coins/sec when placed"
+		local capacity = player:GetAttribute("EggDisplayCapacity") or 6
+		local full = capacity > 0 and (player:GetAttribute("EggDisplayCount") or 0) >= capacity
+		missionTitle.Text = inMeadow and "Fly back to camp!" or (full and "Pillows full!" or "Place your egg!")
+		missionHint.Text = inMeadow and "Fly to the blue return portal" or (full and "At a pillow: hold E replace / F sell" or "Use E at your pillow or blue pad")
 		missionCard.BackgroundColor3 = colors.amber
 		missionIcon.BackgroundColor3 = colors.goldEdge
 		if not wasVisible then
@@ -302,14 +336,22 @@ local function refreshCargo()
 			cargoTween:Play()
 		end
 	else
-		missionTitle.Text = inMeadow and "Glide and find an egg" or "Explore Meadow"
-		missionHint.Text = inMeadow and "Fly between the Meadow islands" or "Enter the green Meadow portal"
+		local pending = player:GetAttribute("EggIncomePending") or 0
+		missionTitle.Text = inMeadow and "Glide and find an egg" or (pending > 0 and "Income ready!" or "Explore Meadow")
+		missionHint.Text = inMeadow and "Fly between the Meadow islands" or (pending > 0 and "Use E at your blue pad to collect" or "Enter the green Meadow portal")
 		missionCard.BackgroundColor3 = colors.mint
 		missionIcon.BackgroundColor3 = colors.teal
+	end
+	if not inMeadow and player:GetAttribute("EggDisplayCapacity") == 0 then
+		missionTitle.Text = "Waiting for a camp"
+		missionHint.Text = "All six gardens are occupied"
 	end
 end
 
 player:GetAttributeChangedSignal("CurrentBiome"):Connect(refreshCargo)
+player:GetAttributeChangedSignal("EggDisplayCapacity"):Connect(refreshCargo)
+player:GetAttributeChangedSignal("EggDisplayCount"):Connect(refreshCargo)
+player:GetAttributeChangedSignal("EggIncomePending"):Connect(refreshCargo)
 refreshCargo()
 
 local function disconnectCharacter()

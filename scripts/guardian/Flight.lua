@@ -1,11 +1,13 @@
 -- Bird motion, obstacle queries, swept hit math and wing poses. No egg ownership.
 local Workspace = game:GetService("Workspace")
+local Appearance = require(script.Parent.Appearance)
 local Flight = {}
 Flight.__index = Flight
 
 function Flight.new(model, config)
 	local self = setmetatable({}, Flight)
 	self.Model, self.Config = model, config
+	self.Appearance = Appearance.new(model)
 	self.Position = config.HomePosition
 	self.Facing = Vector3.new(0, 0, -1)
 	self.Stuck = 0
@@ -194,15 +196,7 @@ end
 function Flight:pose(state, now)
 	local pose = CFrame.lookAt(self.Position, self.Position + self.Facing)
 	self.Model:PivotTo(pose)
-	local flap = math.sin(now * (state == "Swoop" and 26 or 12)) * 0.3
-	if state == "Windup" then
-		flap = 0.7
-	end
-	if state == "Slap" then
-		flap = -0.85
-	end
-	self.Model.LeftWing.CFrame = pose * CFrame.new(-2, 0.5, 0) * CFrame.Angles(0, 0, flap) * CFrame.new(-4, 0, 0)
-	self.Model.RightWing.CFrame = pose * CFrame.new(2, 0.5, 0) * CFrame.Angles(0, 0, -flap) * CFrame.new(4, 0, 0)
+	self.Appearance:pose(pose, state, now)
 end
 
 return Flight

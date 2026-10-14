@@ -32,6 +32,26 @@
       "GliderBoost": {
         "$path": "scripts/GliderBoost.server.lua",
         "$ignoreUnknownInstances": true
+      },
+      "PillowColors": {
+        "$path": "scripts/PillowColors.server.lua",
+        "$ignoreUnknownInstances": true
+      },
+      "CollectionModules": {
+        "$path": "scripts/collection",
+        "$ignoreUnknownInstances": true
+      },
+      "ProgressionModules": {
+        "$path": "scripts/progression",
+        "$ignoreUnknownInstances": true
+      },
+      "CombatModules": {
+        "$path": "scripts/combat",
+        "$ignoreUnknownInstances": true
+      },
+      "SkyCombat": {
+        "$path": "scripts/SkyCombat.server.lua",
+        "$ignoreUnknownInstances": true
       }
     },
     "ReplicatedStorage": {
@@ -40,6 +60,10 @@
       "BoostModules": {
         "$path": "scripts/boost",
         "$ignoreUnknownInstances": true
+      },
+      "CombatClientModules": {
+        "$path": "scripts/combat_client",
+        "$ignoreUnknownInstances": true
       }
     },
     "StarterGui": {
@@ -47,6 +71,10 @@
       "$ignoreUnknownInstances": true,
       "GliderBoostHUD": {
         "$path": "ui/GliderBoostHUD.model.json",
+        "$ignoreUnknownInstances": true
+      },
+      "SkyCombatHUD": {
+        "$path": "ui/SkyCombatHUD.model.json",
         "$ignoreUnknownInstances": true
       }
     },
@@ -86,6 +114,14 @@
         },
         "MeadowWind": {
           "$path": "scripts/MeadowWind.client.lua",
+          "$ignoreUnknownInstances": true
+        },
+        "CampPlots": {
+          "$path": "scripts/CampPlots.client.lua",
+          "$ignoreUnknownInstances": true
+        },
+        "SkyCombat": {
+          "$path": "scripts/SkyCombat.client.lua",
           "$ignoreUnknownInstances": true
         }
       }

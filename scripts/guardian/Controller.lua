@@ -17,7 +17,6 @@ function Controller.start(ownerScript)
 	local flight = Flight.new(bird, config)
 	local knockback = Knockback.new(config)
 	local sign = bird.Body.GuardianSign.Status
-	local originalColor = bird.Body.Color
 	local state, deadline = "Patrol", 0
 	local target, cargo, root = nil, nil, nil
 	local dashStart, dashEnd, previousRoot = Vector3.zero, Vector3.zero, Vector3.zero
@@ -47,7 +46,7 @@ function Controller.start(ownerScript)
 		end
 		deadline = Workspace:GetServerTimeNow() + (duration or 0)
 		bird:SetAttribute("State", state)
-		bird.Body.Color = state == "Windup" and Color3.fromRGB(255, 185, 65) or originalColor
+		flight.Appearance:setState(state)
 		sign.Text = state == "Patrol" and "NEST GUARDIAN\nTake the egg... then fly!"
 			or state == "Return" and "RETURNING TO NEST"
 			or state == "Windup" and "! WING SLAP !" or string.upper(state)
@@ -85,7 +84,7 @@ function Controller.start(ownerScript)
 			local character = player.Character
 			local egg = character and character:FindFirstChild("CarriedEgg")
 			local candidateRoot = character and character:FindFirstChild("HumanoidRootPart")
-			if egg and candidateRoot and egg:GetAttribute("EggName") == "Uncommon Egg"
+			if egg and candidateRoot and egg:GetAttribute("GuardianProtected") == true
 				and (candidateRoot.Position - config.HomePosition).Magnitude < config.LeashRadius
 				and (not requireClearApproach or not flight:blocked(flight.Position, candidateRoot.Position)) then
 				target, cargo, root = player, egg, candidateRoot
@@ -207,7 +206,7 @@ function Controller.start(ownerScript)
 			notice(player, "")
 		end
 		bird:SetAttribute("GuardianRunning", nil)
-		bird.Body.Color = originalColor
+		flight.Appearance:destroy()
 	end
 	table.insert(connections, Players.PlayerAdded:Connect(bind))
 	for _, player in ipairs(Players:GetPlayers()) do

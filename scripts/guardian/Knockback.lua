@@ -2,6 +2,8 @@
 local Workspace = game:GetService("Workspace")
 local Debris = game:GetService("Debris")
 local TweenService = game:GetService("TweenService")
+local combatModules = script.Parent.Parent:FindFirstChild("CombatModules")
+local CombatImpact = combatModules and require(combatModules:WaitForChild("Impact"))
 local Knockback = {}
 Knockback.__index = Knockback
 
@@ -26,6 +28,10 @@ function Knockback:apply(player, hitRoot, origin, facing)
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	if not character or hitRoot.Parent ~= character or hitRoot.Anchored
 		or not humanoid or humanoid.Health <= 0 then return end
+	-- A guardian slap takes over physical motion from an existing player stun.
+	if CombatImpact then
+		CombatImpact.clear(player)
+	end
 	local away = (hitRoot.Position - origin) * Vector3.new(1, 0, 1)
 	if away.Magnitude < 0.1 then
 		away = facing * Vector3.new(1, 0, 1)

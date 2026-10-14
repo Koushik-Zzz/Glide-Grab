@@ -29,7 +29,7 @@ function HUD:layout()
 	if size.X <= 0 then return end
 	local touch = UserInputService.TouchEnabled
 	local narrow = size.X < 760
-	local compact = size.Y < 480 and size.X >= 460
+	local compact = size.Y < 540 and size.X >= 460
 	-- Center action on small/touch screens, clear of joystick/jump and the hotbar.
 	if compact then
 		self.Button.AnchorPoint = Vector2.new(1, 0)
@@ -46,8 +46,8 @@ function HUD:layout()
 	end
 	self.Notice.AnchorPoint = Vector2.new(compact and 0 or 0.5, 0)
 	self.Notice.Size = UDim2.fromOffset(math.min(380, size.X - (compact and 228 or 32)), compact and 30 or 42)
-	self.Notice.Position = compact and UDim2.fromOffset(16, 136)
-		or UDim2.new(0.5, 0, 0, narrow and 212 or 142)
+	self.Notice.Position = compact and UDim2.fromOffset(16, 156)
+		or UDim2.new(0.5, 0, 0, narrow and 232 or 142)
 end
 
 function HUD:showNotice(text)
@@ -67,6 +67,7 @@ function HUD:render(character)
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	local root = character and character:FindFirstChild("HumanoidRootPart")
 	local knockedUntil = character and character:GetAttribute("GuardianKnockbackUntil") or 0
+	knockedUntil = math.max(knockedUntil, character and character:GetAttribute("CombatStunnedUntil") or 0)
 	local blocked = not humanoid or humanoid.Health <= 0 or not root or root.Anchored
 		or player:GetAttribute("PortalTraveling") or knockedUntil > now
 	local fraction, status, hint = 1, "BOOST READY", ""
