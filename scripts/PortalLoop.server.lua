@@ -106,6 +106,8 @@ remote.Name = "PortalTravel"
 remote.Parent = ReplicatedStorage
 local states = {}
 local nextId = 0
+local LOAD_TIMEOUT = 24
+local ARRIVAL_TIMEOUT = 12
 
 local function landing(biome)
 	local floor = regions[biome].Floor
@@ -136,6 +138,19 @@ end
 local function finish(player, state, record, success, message)
 	if state.Pending ~= record then return end
 	state.Pending = nil
+	-- Hold the destination through arrival; release it on every exit path.
+	if record.Focus then
+		if record.FocusAdded and player.Parent == Players then
+			local ok, err = pcall(function()
+				player:RemoveReplicationFocus(record.Focus)
+			end)
+			if not ok then
+				warn("PortalTravel focus cleanup: " .. tostring(err))
+			end
+		end
+		record.Focus:Destroy()
+		record.Focus = nil
+	end
 	local character, root = livingCharacter(player)
 	if character == record.Character then
 		if success then
@@ -174,9 +189,34 @@ local function beginTravel(player, state, destination, recovery, field, prompt)
 	root.Anchored = true
 	stopVelocity(root)
 	player:SetAttribute("PortalTraveling", true)
+	if Workspace.StreamingEnabled then
+		local focus = part(objects, "TravelFocus_" .. record.Id, Vector3.one,
+			record.Target, Color3.new())
+		focus.Transparency = 1
+		focus.CanQuery = false
+		record.Focus = focus
+		local ok, err = pcall(function()
+			player:AddReplicationFocus(focus)
+		end)
+		record.FocusAdded = ok
+		if not ok then
+			warn("PortalTravel destination focus: " .. tostring(err))
+		end
+		-- Server prefetch runs independently of the client handshake. The API
+		-- is best effort; the client must still see the actual landing floor.
+		task.spawn(function()
+			local streamed, streamError = pcall(function()
+				player:RequestStreamAroundAsync(record.Target.Position, 20)
+			end)
+			if not streamed and states[player] == state and state.Pending == record then
+				warn("PortalTravel prefetch: " .. tostring(streamError))
+			end
+		end)
+	end
 	remote:FireClient(player, "Prepare", record.Id, record.Target.Position, destination, recovery == true)
-	task.delay(10, function()
+	task.delay(LOAD_TIMEOUT, function()
 		if states[player] == state and state.Pending == record and record.Phase == "Loading" then
+			warn("PortalTravel loading deadline: " .. destination .. " for " .. player.UserId)
 			finish(player, state, record, false, "The area couldn't load. Please try again.")
 		end
 	end)
@@ -235,7 +275,7 @@ remote.OnServerEvent:Connect(function(player, action, id)
 		character:PivotTo(record.Target)
 		stopVelocity(root)
 		remote:FireClient(player, "Arrive", record.Id, record.Target.Position, record.Destination)
-		task.delay(6, function()
+		task.delay(ARRIVAL_TIMEOUT, function()
 			if states[player] == state and state.Pending == record then
 				finish(player, state, record, false, "Travel was interrupted. Please try again.")
 			end

@@ -150,7 +150,7 @@ remote.OnClientEvent:Connect(function(action, id, position, biome, recovery)
 		hint.Text = recovery and "Stay inside the biome and use its portals to travel." or "Getting your landing area ready…"
 		-- The server has its own deadlines and unfreezes cancelled trips. This
 		-- watchdog prevents an interrupted client callback leaving a black screen.
-		task.delay(18, function()
+		task.delay(40, function()
 			if activeId == id and revision == version then
 				remote:FireServer("Cancel", id)
 				resetPresentation()
@@ -159,13 +159,10 @@ remote.OnClientEvent:Connect(function(action, id, position, biome, recovery)
 		end)
 		fade(true, version)
 		if activeId ~= id or revision ~= version then return end
-		local deadline = os.clock() + 8
-		if Workspace.StreamingEnabled then
-			-- The API is best effort, so verify the actual landing floor below.
-			pcall(function()
-				player:RequestStreamAroundAsync(position, 6)
-			end)
-		end
+		local deadline = os.clock() + 20
+		-- The server prefetches and holds the destination in streaming range.
+		-- Inspect replication immediately rather than waiting for a yielding
+		-- request before checking an already-loaded floor.
 		while activeId == id and revision == version and os.clock() < deadline do
 			if floorReady(biome, position) then
 				remote:FireServer("Ready", id)
@@ -174,11 +171,12 @@ remote.OnClientEvent:Connect(function(action, id, position, biome, recovery)
 			task.wait(0.1)
 		end
 		if activeId == id and revision == version then
+			warn("PortalTravel: landing floor unavailable for " .. biome)
 			remote:FireServer("Cancel", id)
 		end
 	elseif activeId == id and action == "Arrive" then
 		local version = revision
-		local deadline = os.clock() + 5
+		local deadline = os.clock() + 10
 		while activeId == id and revision == version and os.clock() < deadline do
 			local character = player.Character
 			local root = character and character:FindFirstChild("HumanoidRootPart")
@@ -189,6 +187,7 @@ remote.OnClientEvent:Connect(function(action, id, position, biome, recovery)
 			task.wait(0.1)
 		end
 		if activeId == id and revision == version then
+			warn("PortalTravel: arrival was not confirmed for " .. biome)
 			remote:FireServer("Cancel", id)
 		end
 	elseif activeId == id and (action == "Complete" or action == "Cancel") then
