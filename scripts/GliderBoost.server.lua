@@ -1,8 +1,9 @@
--- Boost eligibility, cooldowns and camp purchases are server-owned. Session progress.
+-- Boost eligibility and camp purchases are server-owned; levels use the save profile.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local Profiles = require(script.Parent:WaitForChild("DataModules"):WaitForChild("Profiles"))
 local Config = require(ReplicatedStorage:WaitForChild("BoostModules"):WaitForChild("Config"))
 local station = Workspace:WaitForChild("BoostWorkshop", 10)
 assert(station, "Create the camp BoostWorkshop with the Edit-mode setup")
@@ -26,7 +27,7 @@ local function living(player)
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	local root = character and character:FindFirstChild("HumanoidRootPart")
-	if player.Parent ~= Players or not humanoid or humanoid.Health <= 0
+	if not Profiles.get(player) or player.Parent ~= Players or not humanoid or humanoid.Health <= 0
 		or not root or root.Anchored or player:GetAttribute("PortalTraveling") then
 		return nil
 	end
@@ -44,25 +45,36 @@ local function flightEligible(player, character)
 end
 
 local function bind(player)
-	local record = {Level = 0, ReadyAt = 0, LastRequest = 0, LastBuy = 0}
+	local profile = Profiles.await(player)
+	if not profile then return end
+	local record = {Level = profile.BoostLevel, ReadyAt = 0, LastRequest = 0, LastBuy = 0}
 	records[player] = record
-	player:SetAttribute("BoostLevel", 0)
+	player:SetAttribute("BoostLevel", record.Level)
 	player:SetAttribute("BoostUntil", 0)
 	player:SetAttribute("BoostReadyAt", 0)
-	player:SetAttribute("BoostRecharge", Config.atLevel(0).Recharge)
+	player:SetAttribute("BoostRecharge", Config.atLevel(record.Level).Recharge)
+	record.ResetConnection = player:GetAttributeChangedSignal("Rebirths"):Connect(function()
+		cancel(player, record)
+		record.Level = profile.BoostLevel
+		record.ReadyAt = 0
+		player:SetAttribute("BoostLevel", record.Level)
+		player:SetAttribute("BoostRecharge", Config.atLevel(record.Level).Recharge)
+		player:SetAttribute("BoostReadyAt", 0)
+	end)
 	record.Connection = player.CharacterRemoving:Connect(function()
 		cancel(player, record)
 	end)
 end
 Players.PlayerAdded:Connect(bind)
 for _, player in ipairs(Players:GetPlayers()) do
-	bind(player)
+	task.spawn(bind, player)
 end
 Players.PlayerRemoving:Connect(function(player)
 	local record = records[player]
 	if record then
 		cancel(player, record)
 		record.Connection:Disconnect()
+		record.ResetConnection:Disconnect()
 		records[player] = nil
 	end
 end)
@@ -109,6 +121,7 @@ prompt.Triggered:Connect(function(player)
 	-- Atomic transaction: no yield between checking funds and granting the next level.
 	coins.Value -= nextSettings.Price
 	record.Level += 1
+	Profiles.get(player).BoostLevel = record.Level
 	player:SetAttribute("BoostLevel", record.Level)
 	player:SetAttribute("BoostRecharge", nextSettings.Recharge)
 	remote:FireClient(player, "Boost upgraded! Longer burst, faster recharge")

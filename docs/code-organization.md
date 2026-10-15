@@ -33,7 +33,7 @@ The project already separates egg collection, portals, wind, HUD and glider cont
 | `scripts/glider/Glider.server.lua` | Imported tool controller; also exposes validated `IsGliding` on the equipped tool. |
 | `scripts/glider/Glider.client.lua` | Imported flight controller; mixes approved boost with momentum and wind, yielding during knockback. |
 
-Shared boost modules live in ReplicatedStorage. The sandboxed imported glider cannot require an unsandboxed module: it reads the server's character attributes instead. Server boost/purchase validation uses private records and server-approved tool state. Progress remains session-only; future persistence should load/save these records without moving transaction authority into UI code.
+Shared boost modules live in ReplicatedStorage. The sandboxed imported glider cannot require an unsandboxed module: it reads the server's character attributes instead. Server boost/purchase validation uses private records and server-approved tool state. Purchased levels load from the server profile, update it on purchase and reset on a saved rebirth; transaction authority stays outside UI code.
 
 ## Collection boundaries
 
@@ -51,13 +51,13 @@ Shared boost modules live in ReplicatedStorage. The sandboxed imported glider ca
 | `scripts/collection/PillowAppearance.lua` | Rarity colors only. |
 | `scripts/PillowColors.server.lua` | Bind authored pillow presentation to displayed-egg/slot changes. |
 
-Rojo maps the collection folder into ServerScriptService/CollectionModules. Private records supply identity/rates; client HUDs read published attributes. Future persistence should restore those private records and rebuild visuals, never reconstruct ownership or pay rates from client-visible models.
+Rojo maps the collection folder into ServerScriptService/CollectionModules. Private records supply identity/rates; client HUDs read published attributes. Persistence restores private offers and rebuilds visuals from the validated save, never from client-visible ownership or pay-rate attributes.
 
 Rolled Economy snapshots travel in the private carried record. Plot validates that snapshot against the catalogue and consumes it without rerolling or reading an IncomeRate Attribute. The display retains its EggId, EggTier and EggScale. Shared Common pickups have independent records/IDs; exclusive offers reserve one source until it is released and respawns.
 
 ## Progression and shared facilities
 
-`scripts/progression/Progression.lua` is a server-only session rebirth record, mapped under ServerScriptService/ProgressionModules. PortalLoop checks `canEnter(player, required)` before departure and again before arrival. Counts use a minimum threshold, never equality or a client-provided number. Meadow starts at zero; no client rebirth setter exists. A future server rebirth transaction and persistence loader must update these records.
+`scripts/progression/Progression.lua` reads the private loaded data profile, mapped under ServerScriptService/ProgressionModules. PortalLoop checks `canEnter(player, required)` before departure and again before arrival. Counts use a minimum threshold, never equality or a client-provided number. Meadow starts at zero; Storm Isles requires one. Rebirth.server validates the short-lived offer and uses Profiles.commit to save the entire reset before applying the scene unlock. No client rebirth setter exists. See [saving boundaries and validation status](saving-and-first-rebirth.md).
 
 The workshop is public but its existing private boost levels, prices and cooldowns stay per player. Each plot's ledger is a separate closure, never shared through a pad or mutable owner attribute. The authored shared scene remains Studio-owned; setup files record migrations and do not execute at runtime.
 

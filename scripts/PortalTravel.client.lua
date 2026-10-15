@@ -116,6 +116,10 @@ local function floorReady(biome, position)
 		local map = Workspace:FindFirstChild("Map")
 		local meadow = map and map:FindFirstChild("Meadow")
 		floor = meadow and meadow:FindFirstChild("MeadowEntrance")
+	elseif biome == "Storm Isles" then
+		local map = Workspace:FindFirstChild("Map")
+		local storm = map and map:FindFirstChild("StormIsles")
+		floor = storm and storm:FindFirstChild("StormEntrance")
 	end
 	if not floor or not floor:IsA("BasePart") or not floor.Anchored or not floor.CanCollide then return false end
 	local localPoint = floor.CFrame:PointToObjectSpace(position)

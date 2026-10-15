@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local ServerStorage = game:GetService("ServerStorage")
 local Workspace = game:GetService("Workspace")
 local Debris = game:GetService("Debris")
+local Profiles = require(script.Parent:WaitForChild("DataModules"):WaitForChild("Profiles"))
 local collectionModules = script.Parent:WaitForChild("CollectionModules")
 local Collection = require(collectionModules:WaitForChild("Controller"))
 local Economy = require(collectionModules:WaitForChild("Config"))
@@ -28,6 +29,8 @@ local definitions = {
 	{Island = islandPart("EggIsland"), Template = "CommonEgg", Name = "Common Egg", Color = Color3.fromRGB(255, 220, 110)},
 	{Island = islandPart("ChallengeIsland"), Template = "UncommonEgg", Name = "Uncommon Egg", Color = Color3.fromRGB(140, 255, 176)},
 	{Island = islandPart("ChallengeIsland"), Template = "RareEgg", Name = "Rare Egg", Color = Color3.fromRGB(109, 181, 255)},
+	{Island = Workspace.Map.StormIsles.StormEggIsland, Template = "StormEgg", Name = "Storm Egg",
+		Biome = "Storm Isles", Color = Color3.fromRGB(190, 137, 244)},
 }
 assert(not Workspace:FindFirstChild("EggLoopPrototype"), "Keep only one EggLoop script")
 local objects = Instance.new("Folder")
@@ -184,7 +187,7 @@ local function chooseSpawn(source)
 end
 
 local function validNearby(player, part, prompt)
-	if not prompt.Enabled or player.Parent ~= Players then return nil end
+	if not Profiles.get(player) or not prompt.Enabled or player.Parent ~= Players then return nil end
 	if player:GetAttribute("PortalTraveling") then return nil end
 	if player.Character and Workspace:GetServerTimeNow() < (player.Character:GetAttribute("CombatStunnedUntil") or 0) then return nil end
 	local character = player.Character
@@ -231,17 +234,6 @@ end
 guardianCatch.Parent = script
 
 local function setupPlayer(player)
-	local stats = player:FindFirstChild("leaderstats")
-	if not stats then
-		stats = Instance.new("Folder")
-		stats.Name = "leaderstats"
-		stats.Parent = player
-	end
-	if not stats:FindFirstChild("Coins") then
-		local coins = Instance.new("IntValue")
-		coins.Name = "Coins"
-		coins.Parent = stats
-	end
 	player.CharacterRemoving:Connect(function()
 		releaseEgg(player, 0)
 	end)
@@ -329,6 +321,9 @@ end
 transfer.Parent = script
 Collection.start({
 	peek = ownedCargo,
+	createSaved = function(template, economy)
+		return makeEgg({Template = template, Color = Color3.fromRGB(109, 181, 255)}, economy)
+	end,
 	consume = function(player, expected)
 		if ownedCargo(player) ~= expected then return false end
 		releaseEgg(player, Economy.Eggs[expected.Source.Definition.Template].RespawnSeconds)
@@ -383,7 +378,7 @@ for index, definition in ipairs(definitions) do
 		caption.Font = Enum.Font.GothamBold
 		caption.Parent = beacon
 		prompt.Triggered:Connect(function(player)
-			if player:GetAttribute("CurrentBiome") ~= "Meadow" then return end
+			if player:GetAttribute("CurrentBiome") ~= (definition.Biome or "Meadow") then return end
 			local root, humanoid = validNearby(player, promptPart, prompt)
 			if not root or not claims:canClaim(player, source, os.clock()) then return end
 			local cargo = makeCargo(egg, root)

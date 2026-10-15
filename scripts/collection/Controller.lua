@@ -2,6 +2,7 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local Plot = require(script.Parent.Plot)
+local Profiles = require(script.Parent.Parent:WaitForChild("DataModules"):WaitForChild("Profiles"))
 local Controller = {}
 local started = false
 function Controller.start(callbacks)
@@ -10,6 +11,12 @@ function Controller.start(callbacks)
 	local folder = Workspace:WaitForChild("CampPlots", 10)
 	assert(folder, "Run the SharedCamp Edit-mode setup first")
 	local plots, assignments, waiting, versions = {}, {}, {}, {}
+	function Controller.rebirth(player, data)
+		local plot = assignments[player]
+		if plot then
+			plot:rebirth(data)
+		end
+	end
 	local function notice(player, message)
 		if player.Parent ~= Players then return end
 		local version = (versions[player] or 0) + 1
@@ -32,6 +39,8 @@ function Controller.start(callbacks)
 	end
 	assert(#plots == 6, "The shared camp needs six authored plots")
 	local function assign(player)
+		local profile = Profiles.await(player)
+		if not profile then return end
 		if assignments[player] or player.Parent ~= Players then return end
 		for _, plot in ipairs(plots) do
 			if plot:isAvailable() and plot:claim(player) then
@@ -65,7 +74,7 @@ function Controller.start(callbacks)
 		end
 	end)
 	for _, player in ipairs(Players:GetPlayers()) do
-		assign(player)
+		task.spawn(assign, player)
 	end
 	task.spawn(function()
 		while folder.Parent do
@@ -73,6 +82,12 @@ function Controller.start(callbacks)
 				plot:publish()
 			end
 			task.wait(1)
+		end
+	end)
+	Profiles.capture(function(player, data)
+		local plot = assignments[player]
+		if plot then
+			plot:snapshot(data)
 		end
 	end)
 end

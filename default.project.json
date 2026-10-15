@@ -9,6 +9,14 @@
     "ServerScriptService": {
       "$className": "ServerScriptService",
       "$ignoreUnknownInstances": true,
+      "DataModules": {
+        "$path": "scripts/data",
+        "$ignoreUnknownInstances": true
+      },
+      "Rebirth": {
+        "$path": "scripts/Rebirth.server.lua",
+        "$ignoreUnknownInstances": true
+      },
       "EggLoop": {
         "$path": "scripts/EggLoop.server.lua",
         "$ignoreUnknownInstances": true
@@ -69,6 +77,10 @@
     "StarterGui": {
       "$className": "StarterGui",
       "$ignoreUnknownInstances": true,
+      "RebirthHUD": {
+        "$path": "ui/RebirthHUD.model.json",
+        "$ignoreUnknownInstances": true
+      },
       "GliderBoostHUD": {
         "$path": "ui/GliderBoostHUD.model.json",
         "$ignoreUnknownInstances": true
@@ -100,6 +112,10 @@
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
         "$ignoreUnknownInstances": true,
+        "Rebirth": {
+          "$path": "scripts/Rebirth.client.lua",
+          "$ignoreUnknownInstances": true
+        },
         "FlightHUD": {
           "$path": "scripts/FlightHUD.client.lua",
           "$ignoreUnknownInstances": true

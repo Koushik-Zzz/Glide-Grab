@@ -1,34 +1,24 @@
--- Server-only session progression. Attributes mirror UI, never determine unlocks.
+-- Unlocks always use the private loaded profile; attributes only mirror UI.
+local Profiles = require(script.Parent.Parent:WaitForChild("DataModules"):WaitForChild("Profiles"))
 local Players = game:GetService("Players")
 local Progression = {}
-local rebirths = {}
-local function valid(value)
-	return type(value) == "number" and value >= 0 and value < math.huge and value % 1 == 0
-end
 local function bind(player)
-	if rebirths[player] ~= nil then return end
-	rebirths[player] = 0
-	player:SetAttribute("Rebirths", 0)
+	local profile = Profiles.await(player)
+	if profile then
+		player:SetAttribute("Rebirths", profile.Rebirths)
+	end
 end
 Players.PlayerAdded:Connect(bind)
-Players.PlayerRemoving:Connect(function(player)
-	rebirths[player] = nil
-end)
 for _, player in ipairs(Players:GetPlayers()) do
-	bind(player)
+	task.spawn(bind, player)
 end
 function Progression.getRebirths(player)
-	return rebirths[player]
-end
--- Reserved for server rebirth transactions / a future persistence loader.
-function Progression.setRebirths(player, value)
-	if player.Parent ~= Players or rebirths[player] == nil or not valid(value) then return false end
-	rebirths[player] = value
-	player:SetAttribute("Rebirths", value)
-	return true
+	local profile = Profiles.get(player)
+	return profile and profile.Rebirths or nil
 end
 function Progression.canEnter(player, required)
-	local count = rebirths[player]
-	return valid(required) and count ~= nil and count >= required
+	local count = Progression.getRebirths(player)
+	return type(required) == "number" and required == required and required >= 0
+		and required % 1 == 0 and count ~= nil and count >= required
 end
 return Progression

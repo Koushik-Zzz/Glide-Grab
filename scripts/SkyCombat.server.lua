@@ -2,6 +2,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local Profiles = require(script.Parent:WaitForChild("DataModules"):WaitForChild("Profiles"))
 local modules = script.Parent:WaitForChild("CombatModules")
 local Config, Rules, Impact = require(modules.Config), require(modules.Rules), require(modules.Impact)
 local HeldWeapon = require(modules:WaitForChild("HeldWeapon"))
@@ -26,24 +27,34 @@ local function notice(p, text)
 	end)
 end
 local function bind(p)
-	profiles[p] = {Bat = false, Charges = 0, Ready = {}, LastRequest = 0, LastBuy = 0, HitReady = 0}
+	local saved = Profiles.await(p)
+	if not saved then return end
+	profiles[p] = {Bat = saved.Bat, Charges = saved.Shields, Ready = {}, LastRequest = 0, LastBuy = 0, HitReady = 0}
 	profiles[p].Presentation = HeldWeapon.bind(p, function()
 		return profiles[p] ~= nil and profiles[p].Bat
 	end)
-	p:SetAttribute("OwnsBat", false)
-	p:SetAttribute("EggShieldCharges", 0)
+	p:SetAttribute("OwnsBat", saved.Bat)
+	p:SetAttribute("EggShieldCharges", saved.Shields)
+	profiles[p].ResetConnection = p:GetAttributeChangedSignal("Rebirths"):Connect(function()
+		if not profiles[p] then return end
+		profiles[p].Bat, profiles[p].Charges = saved.Bat, saved.Shields
+		p:SetAttribute("OwnsBat", saved.Bat)
+		p:SetAttribute("EggShieldCharges", saved.Shields)
+		profiles[p].Presentation:refresh()
+	end)
 	p.CharacterRemoving:Connect(function()
 		Impact.clear(p)
 	end)
 end
 Players.PlayerAdded:Connect(bind)
 for _, p in ipairs(Players:GetPlayers()) do
-	bind(p)
+	task.spawn(bind, p)
 end
 Players.PlayerRemoving:Connect(function(p)
 	Impact.clear(p)
 	if profiles[p] then
 		profiles[p].Presentation:destroy()
+		profiles[p].ResetConnection:Disconnect()
 	end
 	profiles[p], noticeVersions[p] = nil, nil
 end)
@@ -55,7 +66,7 @@ local function effect(p, action)
 end
 remote.OnServerEvent:Connect(function(p, ...)
 	local state, now = profiles[p], Workspace:GetServerTimeNow()
-	if not state or now - state.LastRequest < Config.RequestInterval then return end
+	if not Profiles.get(p) or not state or now - state.LastRequest < Config.RequestInterval then return end
 	state.LastRequest = now
 	if select("#", ...) ~= 1 then return end
 	local action = ...
@@ -79,6 +90,7 @@ remote.OnServerEvent:Connect(function(p, ...)
 		end
 		if shield:Invoke(p) then
 			state.Charges -= 1
+			Profiles.get(p).Shields = state.Charges
 			p:SetAttribute("EggShieldCharges", state.Charges)
 			notice(p, "Egg shield active for 12 seconds. The bird can still catch you!")
 		else
@@ -127,7 +139,7 @@ local shop = Workspace:WaitForChild("SkyGearShop", 10)
 assert(shop, "Author SkyGearShop in Edit mode")
 local function purchase(p, kind, prompt)
 	local state, now = profiles[p], Workspace:GetServerTimeNow()
-	if not state or now - state.LastBuy < 0.5 then return end
+	if not Profiles.get(p) or not state or now - state.LastBuy < 0.5 then return end
 	state.LastBuy = now
 	local c, _, root = Rules.living(p)
 	if not c or not prompt.Enabled or p:GetAttribute("CurrentBiome") ~= "Base Camp"
@@ -152,11 +164,13 @@ local function purchase(p, kind, prompt)
 	coins.Value -= price
 	if kind == "Bat" then
 		state.Bat = true
+		Profiles.get(p).Bat = true
 		p:SetAttribute("OwnsBat", true)
 		state.Presentation:equip("Bat")
 		notice(p, "Bat purchased! R to swing; your glider stays equipped.")
 	else
 		state.Charges += 1
+		Profiles.get(p).Shields = state.Charges
 		p:SetAttribute("EggShieldCharges", state.Charges)
 		notice(p, "Shield charge purchased! G while carrying an egg in Meadow.")
 	end

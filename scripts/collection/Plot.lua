@@ -5,6 +5,9 @@ local Config = require(script.Parent.Config)
 local Rolls = require(script.Parent.Rolls)
 local Income = require(script.Parent.Income)
 local Visuals = require(script.Parent.Visuals)
+local Profiles = require(script.Parent.Parent:WaitForChild("DataModules"):WaitForChild("Profiles"))
+local Schema = require(script.Parent.Parent.DataModules.Schema)
+local Floors = require(script.Parent.Floors)
 local Plot = {}
 
 local function prompt(root, name, key, button, hold)
@@ -25,8 +28,22 @@ function Plot.new(plot, callbacks, notice)
 	local pad = plot:WaitForChild("CollectionPad")
 	local deposit = pad:WaitForChild("DepositPrompt")
 	local slots, owner, ledger = {}, nil, Income.new(os.clock())
+	local capacity = 6
 	local lastAction = {}
 	local api = {Model = plot}
+	local function saveState(data)
+		data = data or (owner and Profiles.get(owner))
+		if not data then return end
+		ledger:accrue(os.clock())
+		data.Pending = ledger.Pending
+		data.Eggs = {}
+		for _, slot in ipairs(slots) do
+			if slot.Egg then
+				table.insert(data.Eggs, {Slot = slot.Index, Template = slot.Definition.Template,
+					Economy = Schema.copy(slot.Economy)})
+			end
+		end
+	end
 	local padLabel = Visuals.label(pad, "CollectionSign")
 	local function refreshPlotSign()
 		local sign = plot:FindFirstChild("PlotSign")
@@ -57,13 +74,15 @@ function Plot.new(plot, callbacks, notice)
 			owner:SetAttribute("EggIncomeRate", rate)
 			owner:SetAttribute("EggIncomePending", pending)
 			owner:SetAttribute("EggDisplayCount", count)
-			owner:SetAttribute("EggDisplayCapacity", #slots)
+			owner:SetAttribute("EggDisplayCapacity", capacity)
 		end
-		padLabel.Text = string.format("COLLECT: %d coins\n%d/%d eggs • %d coins/sec", pending, count, #slots, rate)
+		padLabel.Text = string.format("COLLECT: %d coins\n%d/%d eggs • %d coins/sec", pending, count, capacity, rate)
+		saveState()
 	end
 
 	local function refreshSlot(slot)
 		local occupied = slot.Egg ~= nil
+		local available = owner ~= nil and slot.Index <= capacity
 		slot.Place.ActionText = occupied and "Replace (sells old egg)" or "Place carried egg"
 		slot.Place.ObjectText = occupied
 			and string.format("%s • sell +%d", slot.Definition.Name, slot.Economy.SellValue)
@@ -72,10 +91,11 @@ function Plot.new(plot, callbacks, notice)
 		-- Different keys can show simultaneously; give their native cards separate rows.
 		slot.Place.UIOffset = occupied and Vector2.new(0, -55) or Vector2.zero
 		slot.Sell.UIOffset = Vector2.new(0, 55)
-		slot.Place:SetAttribute("Available", owner ~= nil)
-		slot.Place.Enabled = owner ~= nil
-		slot.Sell:SetAttribute("Available", owner ~= nil and occupied)
-		slot.Sell.Enabled = owner ~= nil and occupied
+		slot.Place:SetAttribute("Available", available)
+		slot.Place.Enabled = available
+		slot.Sell:SetAttribute("Available", available and occupied)
+		slot.Sell.Enabled = available and occupied
+		slot.Label.Parent.Enabled = slot.Index <= capacity
 		slot.Sell.ActionText = "Sell egg +" .. tostring(occupied and slot.Economy.SellValue or 0)
 		slot.Sell.ObjectText = occupied and slot.Definition.Name or "Empty pillow"
 		slot.Model:SetAttribute("EggRarity", occupied and slot.Economy.Rarity or nil)
@@ -100,7 +120,7 @@ function Plot.new(plot, callbacks, notice)
 	end
 
 	local function eligible(player, rootPart, interaction)
-		if player.Parent ~= Players or not interaction.Enabled then return nil end
+		if not Profiles.get(player) or player.Parent ~= Players or not interaction.Enabled then return nil end
 		if player ~= owner then
 			notice(player, "This is another player's camp. Use your own pillows and blue pad.")
 			return nil
@@ -204,7 +224,7 @@ function Plot.new(plot, callbacks, notice)
 		if not coins then return false end
 		if callbacks.peek(player) then
 			for _, slot in ipairs(slots) do
-				if not slot.Egg then
+				if slot.Index <= capacity and not slot.Egg then
 					return place(player, slot, coins)
 				end
 			end
@@ -222,6 +242,36 @@ function Plot.new(plot, callbacks, notice)
 	function api:claim(player)
 		if owner or player.Parent ~= Players then return false end
 		owner = player
+		local data = assert(Profiles.get(player), "Claim requires a loaded profile")
+		capacity = data.Rebirths > 0 and 12 or 6
+		Floors.apply(plot, capacity == 12)
+		local restored = {}
+		-- Build every visual before modifying the profile or exposing the garden.
+		local ok, err = pcall(function()
+			for _, entry in ipairs(data.Eggs) do
+				local slot = assert(slots[entry.Slot], "Missing saved pillow slot")
+				local cargo = callbacks.createSaved(entry.Template, entry.Economy)
+				local definition = {Template = entry.Template, Name = entry.Template:gsub("Egg$", " Egg")}
+				local egg = Visuals.create(cargo, slot.Anchor, definition, entry.Economy, player.UserId)
+				cargo:Destroy()
+				table.insert(restored, {Slot = slot, Egg = egg, Definition = definition, Economy = entry.Economy})
+			end
+		end)
+		if not ok then
+			for _, entry in ipairs(restored) do
+				entry.Egg:Destroy()
+			end
+			owner = nil
+			warn("Could not restore camp: " .. tostring(err))
+			player:Kick("Your eggs could not load. Please rejoin; your save has been kept.")
+			return false
+		end
+		ledger.Pending = data.Pending
+		for _, entry in ipairs(restored) do
+			entry.Slot.Egg, entry.Slot.Definition, entry.Slot.Economy = entry.Egg, entry.Definition, entry.Economy
+			entry.Egg.Parent = entry.Slot.Model
+		end
+		changeRate()
 		refreshPlotSign()
 		plot:SetAttribute("OwnerUserId", player.UserId)
 		for _, slot in ipairs(slots) do
@@ -233,7 +283,10 @@ function Plot.new(plot, callbacks, notice)
 
 	function api:release(player)
 		if owner ~= player then return false end
+		saveState()
 		owner = nil
+		capacity = 6
+		Floors.apply(plot, false)
 		refreshPlotSign()
 		ledger = Income.new(os.clock())
 		lastAction[player] = nil
@@ -256,6 +309,24 @@ function Plot.new(plot, callbacks, notice)
 	function api:publish()
 		publish()
 	end
+	function api:snapshot(data)
+		saveState(data)
+	end
+	function api:rebirth(data)
+		for _, slot in ipairs(slots) do
+			if slot.Egg then
+				slot.Egg:Destroy()
+			end
+			slot.Egg, slot.Definition, slot.Economy = nil, nil, nil
+		end
+		ledger = Income.new(os.clock())
+		capacity = data.Rebirths > 0 and 12 or 6
+		Floors.apply(plot, capacity == 12)
+		for _, slot in ipairs(slots) do
+			refreshSlot(slot)
+		end
+		publish()
+	end
 
 	-- Server-only transaction entry shared by native prompts and Studio tests.
 	-- Every call still validates private ownership, living state and proximity.
@@ -275,6 +346,7 @@ function Plot.new(plot, callbacks, notice)
 	end
 
 	refreshPlotSign()
+	Floors.apply(plot, false)
 	publish()
 	return api
 end

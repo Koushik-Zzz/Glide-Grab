@@ -16,7 +16,8 @@ local pads = {Slap = Enum.KeyCode.DPadLeft, Bat = Enum.KeyCode.DPadUp, Steal = E
 local padText = {Slap = "←", Bat = "↑", Steal = "→", Shield = "↓"}
 local connections, bound = {}, false
 local function request(action)
-	if UserInputService:GetFocusedTextBox() or player:GetAttribute("CurrentBiome") ~= "Meadow" then return end
+	local biome = player:GetAttribute("CurrentBiome")
+	if UserInputService:GetFocusedTextBox() or (biome ~= "Meadow" and biome ~= "Storm Isles") then return end
 	local c = player.Character
 	local h = c and c:FindFirstChildOfClass("Humanoid")
 	if not h or h.Health <= 0 or player:GetAttribute("PortalTraveling")
@@ -39,7 +40,8 @@ local function layout()
 	end
 end
 local function context()
-	local enabled = player:GetAttribute("CurrentBiome") == "Meadow"
+	local biome = player:GetAttribute("CurrentBiome")
+	local enabled = biome == "Meadow" or biome == "Storm Isles"
 	bar.Visible = enabled
 	if enabled and not bound then
 		for action, key in pairs(keys) do

@@ -1,30 +1,24 @@
--- Server-owned gust timing and eligibility. The glider consumes the wind target.
+-- Each biome owns one authored gust volume. Existing glider attributes are shared.
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local meadow = Workspace:WaitForChild("Map"):WaitForChild("Meadow")
-local zone = meadow:WaitForChild("WindGust", 10)
-assert(zone and zone:IsA("BasePart"), "Create Meadow/WindGust with MeadowFun.studio.lua")
-
-local function duration(name, fallback)
-	local value = zone:GetAttribute(name)
-	if type(value) ~= "number" or value ~= value then return fallback end
-	return math.clamp(value, 1, 30)
+local W = workspace
+local zones = {}
+for biome, folder in pairs({Meadow = "Meadow", ["Storm Isles"] = "StormIsles"}) do
+	local zone = W:WaitForChild("Map"):WaitForChild(folder):WaitForChild("WindGust")
+	local function duration(name, fallback)
+		local value = zone:GetAttribute(name)
+		return type(value) == "number" and value == value and math.clamp(value, 1, 30) or fallback
+	end
+	local wind = zone:GetAttribute("WindVelocity")
+	if typeof(wind) ~= "Vector3" or wind.Magnitude ~= wind.Magnitude then
+		wind = Vector3.new(64, 0, 0)
+	end
+	if wind.Magnitude > 80 then
+		wind = wind.Unit * 80
+	end
+	zones[biome] = {Zone = zone, Calm = duration("CalmSeconds", 5), Warning = duration("WarningSeconds", 1.5),
+		Gust = duration("GustSeconds", 2.4), Wind = wind, Sign = zone.WindSign.Status}
 end
-local calm = duration("CalmSeconds", 5)
-local warning = duration("WarningSeconds", 1.5)
-local gust = duration("GustSeconds", 2.4)
-local wind = zone:GetAttribute("WindVelocity")
-if typeof(wind) ~= "Vector3" or wind.Magnitude ~= wind.Magnitude then
-	wind = Vector3.new(64, 0, 0)
-end
-if wind.Magnitude > 80 then
-	wind = wind.Unit * 80
-end
-local cycle = calm + warning + gust
-local started = Workspace:GetServerTimeNow()
-local lastPhase = nil
-local sign = zone:WaitForChild("WindSign"):WaitForChild("Status")
-
+local started = W:GetServerTimeNow()
 local function setWind(player, velocity, state)
 	if player:GetAttribute("MeadowWindVelocity") ~= velocity then
 		player:SetAttribute("MeadowWindVelocity", velocity)
@@ -33,65 +27,53 @@ local function setWind(player, velocity, state)
 		player:SetAttribute("MeadowWindState", state)
 	end
 end
-
-local function bindPlayer(player)
+local function bind(player)
 	setWind(player, Vector3.zero, "")
 	player.CharacterRemoving:Connect(function()
 		setWind(player, Vector3.zero, "")
 	end)
 end
-Players.PlayerAdded:Connect(bindPlayer)
+Players.PlayerAdded:Connect(bind)
 for _, player in ipairs(Players:GetPlayers()) do
-	bindPlayer(player)
+	bind(player)
 end
-
-while zone.Parent do
-	local now = Workspace:GetServerTimeNow()
-	local elapsed = (now - started) % cycle
-	local phase, remaining
-	if elapsed < calm then
-		phase, remaining = "Calm", calm - elapsed
-	elseif elapsed < calm + warning then
-		phase, remaining = "Warning", calm + warning - elapsed
-	else
-		phase, remaining = "Gust", cycle - elapsed
+while script.Parent do
+	local now = W:GetServerTimeNow()
+	for _, r in pairs(zones) do
+		local elapsed = (now - started) % (r.Calm + r.Warning + r.Gust)
+		if elapsed < r.Calm then
+			r.Phase, r.Remaining = "Calm", r.Calm - elapsed
+		elseif elapsed < r.Calm + r.Warning then
+			r.Phase, r.Remaining = "Warning", r.Calm + r.Warning - elapsed
+		else
+			r.Phase, r.Remaining = "Gust", r.Calm + r.Warning + r.Gust - elapsed
+		end
+		if r.Zone:GetAttribute("Phase") ~= r.Phase then
+			r.Zone:SetAttribute("Phase", r.Phase)
+			r.Zone:SetAttribute("NextChangeTime", now + r.Remaining)
+		end
+		r.Sign.Text = r.Phase == "Gust" and "CROSSWIND\nSteer against it or fly around"
+			or r.Phase == "Warning" and ("GUST IN " .. math.ceil(r.Remaining) .. "\nGet ready to steer!")
+			or ("CALM FOR " .. math.ceil(r.Remaining) .. "\nClear to cross")
 	end
-	if phase ~= lastPhase then
-		zone:SetAttribute("Phase", phase)
-		zone:SetAttribute("NextChangeTime", now + remaining)
-		lastPhase = phase
-	end
-	local text = phase == "Gust" and "CROSSWIND  →\nSteer against it or fly around"
-		or phase == "Warning" and ("GUST IN " .. math.ceil(remaining) .. "\nGet ready to steer!")
-		or ("CALM FOR " .. math.ceil(remaining) .. "\nClear to cross")
-	if sign.Text ~= text then
-		sign.Text = text
-	end
-	local half = zone.Size / 2
 	for _, player in ipairs(Players:GetPlayers()) do
-		local character = player.Character
-		local root = character and character:FindFirstChild("HumanoidRootPart")
-		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		local c = player.Character
+		local root = c and c:FindFirstChild("HumanoidRootPart")
+		local h = c and c:FindFirstChildOfClass("Humanoid")
+		local r = zones[player:GetAttribute("CurrentBiome")]
 		local velocity, state = Vector3.zero, ""
-		if root and humanoid and humanoid.Health > 0 and not root.Anchored
-			and player:GetAttribute("CurrentBiome") == "Meadow"
-			and not player:GetAttribute("PortalTraveling") then
-			local point = zone.CFrame:PointToObjectSpace(root.Position)
+		if r and root and h and h.Health > 0 and not root.Anchored and not player:GetAttribute("PortalTraveling") then
+			local point, half = r.Zone.CFrame:PointToObjectSpace(root.Position), r.Zone.Size / 2
 			local edge = math.min(half.X - math.abs(point.X), half.Y - math.abs(point.Y), half.Z - math.abs(point.Z))
 			if edge > -50 then
-				state = phase
+				state = r.Phase
 			end
-			if edge > 0 and phase == "Gust" then
-				-- Feather the edge; there is no damage or egg loss in the starter biome.
-				local attack = math.clamp((gust - remaining) / 0.2, 0, 1)
-				local release = math.clamp(remaining / 0.4, 0, 1)
-				velocity = wind * math.min(attack, release) * math.clamp(edge / 8, 0, 1)
+			if edge > 0 and r.Phase == "Gust" then
+				local envelope = math.min(math.clamp((r.Gust - r.Remaining) / 0.2, 0, 1), math.clamp(r.Remaining / 0.4, 0, 1))
+				velocity = r.Wind * envelope * math.clamp(edge / 8, 0, 1)
 			end
 		end
 		setWind(player, velocity, state)
 	end
 	task.wait(0.1)
-end
-for _, player in ipairs(Players:GetPlayers()) do
-	setWind(player, Vector3.zero, "")
 end

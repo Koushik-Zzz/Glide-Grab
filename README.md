@@ -5,7 +5,9 @@ Open **`backup_update.rbxl`** to build the map and playtest the game. This is th
 
 `GlideAndGrab_Prototype.rbxl` is an older snapshot that predates the combat shop and assets. Keep it as a fallback; continue editing and saving `backup_update.rbxl`. The place filename is not referenced by `default.project.json`, so the new name does not change Rojo syncing.
 
-The recovered file was inspected directly: all 35 mapped Luau scripts match the disk source, and the shared camps, perimeter walls, Meadow guardian, Rare egg template, combat shop/assets/HUD, and skybox are present. Save both code files and the Studio place when making changes; a scripts-only Rojo build does not include the authored map. Saving the place preserves development work, but player coins, upgrades and eggs still use session-only data until persistence is implemented.
+The recovered file was inspected directly before the later feature work; the shared camps, perimeter walls, Meadow guardian, Rare egg template, combat shop/assets/HUD and skybox are present. Save both code files and the Studio place when making changes; a scripts-only Rojo build does not include the authored map.
+
+**Player saving and first rebirth are implemented and Studio-tested.** The 250,000-coin rebirth resets coins, stored eggs and boost while keeping gear. It unlocks 12 pillow slots and Storm Isles. The build/lint, 23 save/session assertions, native confirmation, two-player isolation/portal/Epic-placement checks and native garden restoration passed. Real cloud leave/rejoin remains a published-game check. Local unassociated files deliberately run a nonpersistent preview; published Studio tests and live servers use separate stores. Keep Rojo connected and save the full Studio place to preserve the authored scene and HUD. See [saving and first rebirth](docs/saving-and-first-rebirth.md) for exact rules and verification limits.
 
 ## What Rojo syncs
 
@@ -33,6 +35,8 @@ The recovered file was inspected directly: all 35 mapped Luau scripts match the 
 The source files were checked against and imported from the saved place. No gameplay changes were made during migration.
 Workspace, the glider model and its mouse script, the rest of StarterGui, and other assets remain managed in Studio. The glider's LocalScript and server Script are owned by Rojo so wind/boost can contribute to its flight target and the server can track flight state. The boost HUD template is also owned by Rojo.
 The project explicitly preserves unknown instances at every mapped level.
+
+Additional mappings: `scripts/data` → `ServerScriptService/DataModules`; `scripts/Rebirth.server.lua` → `ServerScriptService/Rebirth`; `scripts/Rebirth.client.lua` → `StarterPlayerScripts/Rebirth`; `ui/RebirthHUD.model.json` → `StarterGui/RebirthHUD`. Existing collection, progression and combat folders include their new modules automatically.
 
 ## Connect Studio
 
@@ -67,7 +71,7 @@ The first playable biome is in the same place as camp. PortalLoop creates a gree
 
 PortalTravel fades the screen and checks that the actual landing floor is present. The server prefetches the destination and adds a temporary per-player replication focus, retaining the distant area through arrival and removing the focus on completion, cancellation, death or disconnect. The server holds the character in place until the client confirms arrival, then restores movement. Missing floors, interrupted clients, and death cancel the trip and release the character. Server deadlines are 24 seconds to prepare and 12 seconds to confirm arrival; client checks allow 20 and 10 seconds respectively, with a 40-second presentation watchdog; clients cannot choose destinations or start travel by sending acknowledgements. No cross-place teleport or separate server is used.
 
-The `regions` table in PortalLoop defines generous flight volumes around camp and Meadow. Players receive a warning within 75 studs of an edge; leaving the volume returns them to their current biome's landing area. Biome membership is server-owned. Egg pickup requires Meadow membership, placement/collection requires camp membership, and both are blocked during travel. The shared portal checks the private server rebirth count against its minimum requirement before loading and again before arrival. Meadow requires zero. Set the authored `SharedCamp/Anchors/MeadowPortal.RequiredRebirths` before Play; the runtime field receives that value. Higher counts retain access to earlier biomes. No rebirth/reset transaction or advanced biome is playable yet.
+The `regions` table in PortalLoop defines generous flight volumes around camp, Meadow and Storm Isles. Players receive a warning within 75 studs of an edge; leaving the volume returns them to their current biome's landing area. Biome membership is server-owned. Egg pickup requires the egg's biome membership; placement/collection requires camp membership. Interactions are blocked during travel and before the save loads. Shared portals check the private rebirth count before loading and again before arrival. Meadow requires zero; Storm Isles requires one. Higher counts retain earlier access.
 
 `Workspace/Map/Meadow` contains the entrance island and landing floor (`MeadowEntrance`), the common egg island, and the farther/higher uncommon egg island. Fly between them with the existing glider. HUD objectives follow the player's CurrentBiome attribute and cargo.
 
@@ -164,7 +168,7 @@ Studio checks covered all six tintable petals, yellow-center preservation, Commo
 
 `scripts/collection/Controller.lua` owns private display records, plot ownership and transactions; `Income.lua` owns elapsed-time accounting; `Config.lua` owns rates/sale values; `Visuals.lua` freezes cargo clones onto the authored anchors. `PillowAppearance.lua` remains presentation only. EggLoop owns carried eggs and releases their source after a successful display transaction. Neither client attributes nor visible display models determine payouts.
 
-There are **six personal plots with separate server ownership and session-only income**. Joining assigns a free plot; only its owner can place, sell, replace or claim there. Other gardens’ prompts are hidden locally, with independent server validation. Leaving clears only that garden and makes it available again. A seventh player waits for a free plot; the published experience’s maximum-player setting has not been changed. Character respawns keep plots, eggs, coins and upgrades in-session. Stopping Play ends the session. Saving, offline income and the rebirth/reset action remain future work.
+There are **six personal plots with separate server ownership and online income**. Joining assigns a free plot and restores its owner's saved collection; only its owner can place, sell, replace or claim there. Other gardens’ prompts are hidden locally, with independent server validation. Leaving saves that owner's progress and frees the garden. A seventh player waits for a free plot; the published maximum-player setting has not been changed. Local unassociated Studio files use a nonpersistent preview. Offline income is not implemented.
 
 Occupied pillows offset the native **E Replace** and **F Sell** cards into separate rows at -55/+55 pixels. Empty pillows show a single centered E prompt. Each key still uses native prompt exclusivity, and sale/replace holds and server validation are unchanged.
 
@@ -176,13 +180,13 @@ Camp, the Meadow landing floor and the three green island-top unions have a name
 
 The Opila skin passed a native uncommon-egg pickup/slap/return test, including the orange Windup flash, server knockback deadline, egg removal, unchanged 100 health and return to Patrol. Both wings moved during patrol. All working mesh parts are anchored and non-colliding, with no imported scripts or humanoid. Pillow placement and F selling still worked; occupied offsets and empty reset were verified. Bird meshes/textures and the ground image all loaded successfully when preloading the actual streamed Instances. MCP screenshots rendered the screen HUD but a black 3D viewport, even though the user confirmed Studio's game was visible; visual approval of the art/texture and native prompt rectangles is therefore still a user check. Tests used one player with scripted positions; phone/controller/multiplayer are not verified. Evidence: `tmp/opila-prompts-ground-playtest-results.json`.
 
-## Shared camp and future floors
+## Shared camp and upper floors
 
 The 256-by-336-stud camp has six 76-by-76-stud fenced gardens, three on each side of a shared walkway. Gates face the public corridor. Each garden has six flower pillows, owner signage and its own blue placement/collection pad. The workshop and Meadow portal are in the public north plaza; spawn and portal return land in public space. Light/dark green checker tiles use the existing stud texture. Wood fences define walking boundaries while retaining glider access.
 
 `scripts/setup/SharedCamp.studio.lua` records the one-time Edit migration. Native scene backups and a reusable plot template live in `ServerStorage/ImportedAssetBackups/BeforeSharedCamp`. Save the place in Studio after map changes. Historical solo setup scripts should not be rerun on the shared scene.
 
-Each garden has `Presentation/PlotOrigin/UpperFloorAnchor` for a future upper deck. No second playable floor, additional biome or rebirth/reset action is implemented yet. See `docs/rebirth-progression.md`.
+Each garden has an authored, initially hidden upper deck and slots 7–12. The first saved rebirth unlocks the deck, stairs and extra pillows for that garden's owner. Storm Isles is a separate shared portal route. Current checks and the remaining cloud rejoin test are listed in `docs/saving-and-first-rebirth.md`; `docs/rebirth-progression.md` remains earlier planning material.
 
 Executed checks: one Play client completed shared-portal entry/return with cargo, owner-pillow placement, private-pad income collection, a shared-shop upgrade and respawn retaining its plot/egg. A requirement of 1 blocked rebirth 0 and accepted rebirth 2. A separate Edit fixture used Player test doubles and actual cloned plots to check independent 1/3-per-second ledgers, wrong-owner/forged-attribute rejection, range/death/debounce rejection and release/reclaim cleanup. These are not network multiplayer tests.
 

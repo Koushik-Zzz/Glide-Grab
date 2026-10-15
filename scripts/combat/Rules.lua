@@ -2,11 +2,12 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local Config = require(script.Parent.Config)
+local Profiles = require(script.Parent.Parent:WaitForChild("DataModules"):WaitForChild("Profiles"))
 local Rules = {}
 local grace = {}
 local function bind(p)
 	local function update()
-		if p:GetAttribute("CurrentBiome") == "Meadow" then
+		if p:GetAttribute("CurrentBiome") == "Meadow" or p:GetAttribute("CurrentBiome") == "Storm Isles" then
 			grace[p] = Workspace:GetServerTimeNow() + Config.ArrivalGrace
 		end
 	end
@@ -24,17 +25,18 @@ function Rules.living(p)
 	local c = p.Character
 	local h = c and c:FindFirstChildOfClass("Humanoid")
 	local root = c and c:FindFirstChild("HumanoidRootPart")
-	if p.Parent ~= Players or not h or h.Health <= 0 or not root or root.Anchored
+	if not Profiles.get(p) or p.Parent ~= Players or not h or h.Health <= 0 or not root or root.Anchored
 		or p:GetAttribute("PortalTraveling") then return nil end
 	return c, h, root
 end
 function Rules.allowed(p, allowStunned)
 	local c, h, root = Rules.living(p)
-	if not c or p:GetAttribute("CurrentBiome") ~= "Meadow" then return nil end
+	local biome = p:GetAttribute("CurrentBiome")
+	if not c or (biome ~= "Meadow" and biome ~= "Storm Isles") then return nil end
 	local now = Workspace:GetServerTimeNow()
 	if now < (c:GetAttribute("GuardianKnockbackUntil") or 0) then return nil end
 	if now < (grace[p] or 0) or (not allowStunned and now < (c:GetAttribute("CombatStunnedUntil") or 0)) then return nil end
-	local entrance = Workspace.Map.Meadow.MeadowEntrance
+	local entrance = biome == "Storm Isles" and Workspace.Map.StormIsles.StormEntrance or Workspace.Map.Meadow.MeadowEntrance
 	if not ((root.Position - entrance.Position).Magnitude > Config.SafeRadius) then return nil end
 	return c, h, root
 end
@@ -66,6 +68,7 @@ function Rules.pair(attacker, victim, range, airOnly)
 	local a, _, ar = Rules.allowed(attacker, false)
 	local b, _, br = Rules.allowed(victim, true)
 	if not a or not b then return nil end
+	if attacker:GetAttribute("CurrentBiome") ~= victim:GetAttribute("CurrentBiome") then return nil end
 	local difference = br.Position - ar.Position
 	local distance = difference.Magnitude
 	if not (distance > 0.05 and distance <= range) then return nil end

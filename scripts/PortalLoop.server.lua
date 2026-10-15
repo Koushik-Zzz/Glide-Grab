@@ -6,8 +6,10 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local Profiles = require(script.Parent:WaitForChild("DataModules"):WaitForChild("Profiles"))
 local Progression = require(script.Parent:WaitForChild("ProgressionModules"):WaitForChild("Progression"))
 local campAnchor = Workspace:WaitForChild("SharedCamp"):WaitForChild("Anchors"):WaitForChild("MeadowPortal")
+local stormAnchor = Workspace.SharedCamp.Anchors:WaitForChild("StormPortal")
 
 local function floorPart(parent, name)
 	local part = parent:WaitForChild(name, 10)
@@ -21,6 +23,7 @@ local map = Workspace:WaitForChild("Map", 10)
 local meadow = map and map:WaitForChild("Meadow", 10)
 assert(meadow, "PortalLoop: Create Workspace/Map/Meadow")
 local entrance = floorPart(meadow, "MeadowEntrance")
+local stormEntrance = floorPart(map:WaitForChild("StormIsles"), "StormEntrance")
 assert(not Workspace:FindFirstChild("PortalLoopPrototype"), "Keep only one PortalLoop script")
 
 local objects = Instance.new("Folder")
@@ -45,7 +48,7 @@ local function makePortal(name, floor, x, z, color, title, action, description)
 	local model = Instance.new("Model")
 	model.Name = name
 	model.Parent = objects
-	local center = name == "MeadowPortal" and campAnchor.CFrame
+	local center = name == "MeadowPortal" and campAnchor.CFrame or name == "StormPortal" and stormAnchor.CFrame
 		or floor.CFrame * CFrame.new(x, floor.Size.Y / 2 + 6, z)
 	part(model, "LeftPost", Vector3.new(1.5, 12, 1.5), center * CFrame.new(-5, 0, 0), color, Enum.Material.Neon)
 	part(model, "RightPost", Vector3.new(1.5, 12, 1.5), center * CFrame.new(5, 0, 0), color, Enum.Material.Neon)
@@ -93,12 +96,18 @@ entryField:SetAttribute("RequiredRebirths", campAnchor:GetAttribute("RequiredReb
 entryPrompt.ObjectText = "Meadow • " .. tostring(campAnchor:GetAttribute("RequiredRebirths")) .. "+ rebirths"
 local exitField, exitPrompt = makePortal("CampReturnPortal", entrance, -12, 0,
 	Color3.fromRGB(80, 200, 255), "BASE CAMP", "Return to camp", "Bring your egg home to display it")
+local stormField, stormPrompt = makePortal("StormPortal", home, 0, 0,
+	Color3.fromRGB(190, 137, 244), "STORM ISLES • 1 REBIRTH", "Enter Storm Isles", "1+ rebirths • stronger crosswinds")
+stormField:SetAttribute("RequiredRebirths", 1)
+local stormExitField, stormExitPrompt = makePortal("StormReturnPortal", stormEntrance, -12, 0,
+	Color3.fromRGB(80, 200, 255), "BASE CAMP", "Return to camp", "Bring your Storm egg home")
 
 -- Region membership is owned by the server. Crossing the gap cannot unlock a
 -- biome, and the client never supplies a destination or a biome name to travel.
 local regions = {
 	["Base Camp"] = {Floor = home, Center = home.Position + Vector3.new(0, 80, 0), HalfSize = Vector3.new(330, 260, 330)},
 	Meadow = {Floor = entrance, Center = entrance.Position + Vector3.new(90, 75, -245), HalfSize = Vector3.new(500, 330, 560)},
+	["Storm Isles"] = {Floor = stormEntrance, Center = stormEntrance.Position + Vector3.new(70, 85, -235), HalfSize = Vector3.new(450, 330, 500)},
 }
 assert(not ReplicatedStorage:FindFirstChild("PortalTravel"), "Keep only one PortalLoop script")
 local remote = Instance.new("RemoteEvent")
@@ -223,6 +232,7 @@ local function beginTravel(player, state, destination, recovery, field, prompt)
 end
 
 local function usePortal(player, field, prompt, fromBiome, toBiome, allowCargo)
+	if not Profiles.get(player) then return end
 	local state = states[player]
 	local character, root = livingCharacter(player)
 	if not state or not character or state.Pending or not prompt.Enabled then return end
@@ -232,7 +242,7 @@ local function usePortal(player, field, prompt, fromBiome, toBiome, allowCargo)
 		remote:FireClient(player, "Notice", "Place your carried egg on a pillow or the blue pad first.")
 		return
 	end
-	if toBiome == "Meadow" and not Progression.canEnter(player, field:GetAttribute("RequiredRebirths")) then
+	if toBiome ~= "Base Camp" and not Progression.canEnter(player, field:GetAttribute("RequiredRebirths")) then
 		remote:FireClient(player, "Notice", "This portal requires " .. tostring(field:GetAttribute("RequiredRebirths"))
 			.. "+ rebirths. You have " .. tostring(Progression.getRebirths(player)) .. ".")
 		return
@@ -245,6 +255,12 @@ entryPrompt.Triggered:Connect(function(player)
 end)
 exitPrompt.Triggered:Connect(function(player)
 	usePortal(player, exitField, exitPrompt, "Meadow", "Base Camp", true)
+end)
+stormPrompt.Triggered:Connect(function(player)
+	usePortal(player, stormField, stormPrompt, "Base Camp", "Storm Isles", false)
+end)
+stormExitPrompt.Triggered:Connect(function(player)
+	usePortal(player, stormExitField, stormExitPrompt, "Storm Isles", "Base Camp", true)
 end)
 
 remote.OnServerEvent:Connect(function(player, action, id)
@@ -267,7 +283,8 @@ remote.OnServerEvent:Connect(function(player, action, id)
 			finish(player, state, record, false, "Move closer to the portal and try again.")
 			return
 		end
-		if record.Field == entryField and not Progression.canEnter(player, entryField:GetAttribute("RequiredRebirths")) then
+		if record.Field and record.Destination ~= "Base Camp"
+			and not Progression.canEnter(player, record.Field:GetAttribute("RequiredRebirths")) then
 			finish(player, state, record, false, "You no longer meet this portal's rebirth requirement.")
 			return
 		end

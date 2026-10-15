@@ -96,7 +96,14 @@ local coinRim = frame(coinIcon, "Rim", UDim2.fromOffset(6, 6), UDim2.fromOffset(
 outline(coinRim, colors.cream, 2)
 local currency = label(coinRim, "Symbol", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), "$", 20, colors.goldEdge, Enum.Font.GothamBlack)
 currency.TextXAlignment = Enum.TextXAlignment.Center
-label(coinCard, "Caption", UDim2.fromOffset(62, 7), UDim2.fromOffset(92, 15), "COINS", 10, colors.muted, Enum.Font.GothamBold)
+local saveCaption = label(coinCard, "Caption", UDim2.fromOffset(62, 7), UDim2.fromOffset(92, 15), "LOADING", 9, colors.muted, Enum.Font.GothamBold)
+local function refreshSave()
+	local status = player:GetAttribute("SaveStatus")
+	saveCaption.Text = status == "Saved" and "COINS • SAVED" or status == "Preview only" and "COINS • LOCAL"
+		or status == "Loading progress" and "LOADING" or "SAVE RETRY"
+end
+player:GetAttributeChangedSignal("SaveStatus"):Connect(refreshSave)
+refreshSave()
 local coinLabel = label(coinCard, "Amount", UDim2.fromOffset(62, 22), UDim2.fromOffset(92, 30), "--", 26, colors.ink, Enum.Font.GothamBlack)
 coinLabel.TextScaled = true
 local amountLimit = Instance.new("UITextSizeConstraint")
@@ -209,7 +216,9 @@ local function refreshWind()
 		return
 	end
 	windCard.Visible = state ~= nil and state ~= "" and not player:GetAttribute("PortalTraveling")
-	windText.Text = state == "Gust" and "CROSSWIND → steer against it or go around"
+	local velocity = player:GetAttribute("MeadowWindVelocity")
+	local arrow = typeof(velocity) == "Vector3" and velocity.X < 0 and "←" or "→"
+	windText.Text = state == "Gust" and ("CROSSWIND " .. arrow .. " steer against it or go around")
 		or state == "Warning" and "Wind picking up — get ready to steer!"
 		or "Wind is calm — a good time to cross"
 	windText.TextColor3 = state == "Calm" and colors.mint or colors.amber
@@ -308,7 +317,8 @@ local character = nil
 local characterConnections = {}
 
 local function refreshCargo()
-	local inMeadow = player:GetAttribute("CurrentBiome") == "Meadow"
+	local biome = player:GetAttribute("CurrentBiome")
+	local inMeadow = biome == "Meadow" or biome == "Storm Isles"
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	local egg = character and character:FindFirstChild("CarriedEgg")
 	local carrying = character and humanoid and humanoid.Health > 0
@@ -338,7 +348,7 @@ local function refreshCargo()
 	else
 		local pending = player:GetAttribute("EggIncomePending") or 0
 		missionTitle.Text = inMeadow and "Glide and find an egg" or (pending > 0 and "Income ready!" or "Explore Meadow")
-		missionHint.Text = inMeadow and "Fly between the Meadow islands" or (pending > 0 and "Use E at your blue pad to collect" or "Enter the green Meadow portal")
+		missionHint.Text = inMeadow and ("Fly between the " .. biome .. " islands") or (pending > 0 and "Use E at your blue pad to collect" or "Use a camp portal to explore")
 		missionCard.BackgroundColor3 = colors.mint
 		missionIcon.BackgroundColor3 = colors.teal
 	end

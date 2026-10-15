@@ -36,11 +36,12 @@ end
 script.Destroying:Connect(clear)
 while script.Parent do
 	local map = Workspace:FindFirstChild("Map")
-	local meadow = map and map:FindFirstChild("Meadow")
+	local biome = player:GetAttribute("CurrentBiome")
+	local meadow = map and map:FindFirstChild(biome == "Storm Isles" and "StormIsles" or "Meadow")
 	local zone = meadow and meadow:FindFirstChild("WindGust")
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")
-	local visible = zone and root and player:GetAttribute("CurrentBiome") == "Meadow"
+	local visible = zone and root and (biome == "Meadow" or biome == "Storm Isles")
 		and (root.Position - zone.Position).Magnitude < 450
 	if visible then
 		if not effects then
@@ -51,6 +52,10 @@ while script.Parent do
 		local now = Workspace:GetServerTimeNow()
 		for index, leaf in ipairs(leaves) do
 			local x = ((now * speed + index * 23) % zone.Size.X) - zone.Size.X / 2
+			local direction = zone:GetAttribute("WindVelocity")
+			if typeof(direction) == "Vector3" and direction.X < 0 then
+				x = -x
+			end
 			local y = ((index * 17) % 76) - 38 + math.sin(now * 2 + index) * 3
 			local z = ((index * 29) % 100) - 50
 			leaf.CFrame = zone.CFrame * CFrame.new(x, y, z) * CFrame.Angles(0, now + index, math.sin(now + index) * 0.6)
