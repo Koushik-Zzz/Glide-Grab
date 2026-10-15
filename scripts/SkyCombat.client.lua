@@ -84,11 +84,6 @@ local function render()
 		bar[action].TextTransparency = available and 0 or 0.4
 	end
 end
-table.insert(connections, remote.OnClientEvent:Connect(function(action, actor, kind)
-	if action == "Swing" and typeof(actor) == "Instance" and actor:IsA("Player") then
-		effects:play(actor, kind)
-	end
-end))
 table.insert(connections, player:GetAttributeChangedSignal("CurrentBiome"):Connect(context))
 table.insert(connections, root:GetPropertyChangedSignal("AbsoluteSize"):Connect(layout))
 table.insert(connections, UserInputService.LastInputTypeChanged:Connect(layout))

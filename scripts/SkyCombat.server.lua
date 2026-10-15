@@ -4,7 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local modules = script.Parent:WaitForChild("CombatModules")
 local Config, Rules, Impact = require(modules.Config), require(modules.Rules), require(modules.Impact)
-local HeldBat = require(modules:WaitForChild("HeldBat"))
+local HeldWeapon = require(modules:WaitForChild("HeldWeapon"))
 local eggLoop = script.Parent:WaitForChild("EggLoop")
 local steal = eggLoop:WaitForChild("TryAirSteal")
 local hasCargo = eggLoop:WaitForChild("HasCargo")
@@ -27,7 +27,7 @@ local function notice(p, text)
 end
 local function bind(p)
 	profiles[p] = {Bat = false, Charges = 0, Ready = {}, LastRequest = 0, LastBuy = 0, HitReady = 0}
-	profiles[p].Presentation = HeldBat.bind(p, function()
+	profiles[p].Presentation = HeldWeapon.bind(p, function()
 		return profiles[p] ~= nil and profiles[p].Bat
 	end)
 	p:SetAttribute("OwnsBat", false)
@@ -49,15 +49,9 @@ Players.PlayerRemoving:Connect(function(p)
 end)
 local function effect(p, action)
 	local c = p.Character
-	local root = c and c:FindFirstChild("HumanoidRootPart")
-	if not root then return end
-	for _, viewer in ipairs(Players:GetPlayers()) do
-		local vc = viewer.Character
-		local vr = vc and vc:FindFirstChild("HumanoidRootPart")
-		if vr and (vr.Position - root.Position).Magnitude < 160 then
-			remote:FireClient(viewer, "Swing", p, action)
-		end
-	end
+	if not c or not profiles[p] then return end
+	profiles[p].Presentation:equip(action)
+	c:SetAttribute(action .. "SwingStartedAt", Workspace:GetServerTimeNow())
 end
 remote.OnServerEvent:Connect(function(p, ...)
 	local state, now = profiles[p], Workspace:GetServerTimeNow()
@@ -112,9 +106,6 @@ remote.OnServerEvent:Connect(function(p, ...)
 		return
 	end
 	local weapon = Config.Weapons[action]
-	if action == "Bat" then
-		character:SetAttribute("BatSwingStartedAt", now)
-	end
 	effect(p, action)
 	local originalCharacter = character
 	task.delay(weapon.Windup, function()
@@ -162,7 +153,7 @@ local function purchase(p, kind, prompt)
 	if kind == "Bat" then
 		state.Bat = true
 		p:SetAttribute("OwnsBat", true)
-		state.Presentation:refresh()
+		state.Presentation:equip("Bat")
 		notice(p, "Bat purchased! R to swing; your glider stays equipped.")
 	else
 		state.Charges += 1

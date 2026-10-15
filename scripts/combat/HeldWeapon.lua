@@ -1,10 +1,11 @@
--- Replicated cosmetic prop. The private purchase entitlement owns its lifetime.
--- This is a Model, so the glider remains the equipped Tool and keeps its grip.
+-- One replicated left-hand prop. Q/R select it after server eligibility checks;
+-- the glider remains the equipped Tool and keeps its right-hand grip.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local HeldBat = {}
+local HeldWeapon = {}
 
-function HeldBat.bind(player, ownsBat)
+function HeldWeapon.bind(player, ownsBat)
 	local character, model
+	local selected = "Slap"
 	local connections, characterConnections = {}, {}
 	local api = {}
 	local function clearModel()
@@ -25,18 +26,21 @@ function HeldBat.bind(player, ownsBat)
 		local c = character
 		local humanoid = c and c:FindFirstChildOfClass("Humanoid")
 		local hand = c and (c:FindFirstChild("LeftHand") or c:FindFirstChild("Left Arm"))
-		if c ~= player.Character or not c or not c.Parent or not ownsBat()
+		if c ~= player.Character or not c or not c.Parent
 			or not humanoid or humanoid.Health <= 0 or not hand then
 			clearModel()
 			return
 		end
-		if model and model.Parent == c then return end
+		if selected == "Bat" and not ownsBat() then
+			selected = "Slap"
+		end
+		if model and model.Parent == c and model.Name == "Held" .. selected then return end
 		clearModel()
 		local assets = ReplicatedStorage:FindFirstChild("CombatAssets")
-		local source = assets and assets:FindFirstChild("Bat")
+		local source = assets and assets:FindFirstChild(selected)
 		if not source or not source.PrimaryPart then return end
 		model = source:Clone()
-		model.Name = "HeldBat"
+		model.Name = "Held" .. selected
 		local primary = model.PrimaryPart
 		local attachment = hand:FindFirstChild("LeftGripAttachment")
 		local handGrip = attachment and attachment.CFrame
@@ -44,7 +48,9 @@ function HeldBat.bind(player, ownsBat)
 		-- Original imported Bat-to-Handle joint was 1.3 studs from centre on
 		-- a 4-stud bat. Preserve that handle location after the template's scale.
 		local batGrip = CFrame.new(0, 0, -primary.Size.Z * 0.325)
-		model:PivotTo(hand.CFrame * handGrip * batGrip:Inverse())
+		local authoredGrip = primary:FindFirstChild("GripPoint")
+		local weaponGrip = authoredGrip and authoredGrip:IsA("Attachment") and authoredGrip.CFrame or batGrip
+		model:PivotTo(hand.CFrame * handGrip * weaponGrip:Inverse())
 		for _, part in ipairs(model:GetDescendants()) do
 			if part:IsA("BasePart") then
 				part.Anchored = false
@@ -58,11 +64,17 @@ function HeldBat.bind(player, ownsBat)
 			end
 		end
 		local grip = Instance.new("Motor6D")
-		grip.Name = "BatGrip"
+		grip.Name = selected .. "Grip"
 		grip.Part0, grip.Part1 = hand, primary
-		grip.C0, grip.C1 = handGrip, batGrip
+		grip.C0, grip.C1 = handGrip, weaponGrip
 		grip.Parent = primary
 		model.Parent = c
+	end
+	function api:equip(kind)
+		if kind ~= "Slap" and kind ~= "Bat" then return end
+		if kind == "Bat" and not ownsBat() then return end
+		selected = kind
+		self:refresh()
 	end
 	local function bindCharacter(c)
 		if player.Character ~= c then return end
@@ -100,4 +112,4 @@ function HeldBat.bind(player, ownsBat)
 	end
 	return api
 end
-return HeldBat
+return HeldWeapon
