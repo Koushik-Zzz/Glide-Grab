@@ -8,6 +8,7 @@ local Visuals = require(script.Parent.Visuals)
 local Profiles = require(script.Parent.Parent:WaitForChild("DataModules"):WaitForChild("Profiles"))
 local Schema = require(script.Parent.Parent.DataModules.Schema)
 local Floors = require(script.Parent.Floors)
+local Telemetry = require(script.Parent.Parent.ProgressionModules.EconomyTelemetry)
 local Plot = {}
 
 local function prompt(root, name, key, button, hold)
@@ -166,6 +167,7 @@ function Plot.new(plot, callbacks, notice)
 			sold = slot.Economy.SellValue
 			slot.Egg:Destroy()
 			coins.Value += sold
+			Telemetry.source(player, sold, coins.Value, "Replace" .. slot.Definition.Template)
 		end
 		slot.Egg, slot.Definition, slot.Economy = egg, definition, economy
 		egg.Parent = slot.Model
@@ -180,10 +182,11 @@ function Plot.new(plot, callbacks, notice)
 		local coins = eligible(player, slot.Root, slot.Sell)
 		if not coins or not slot.Egg then return false end
 		ledger:accrue(os.clock())
-		local name, amount = slot.Definition.Name, slot.Economy.SellValue
+		local name, template, amount = slot.Definition.Name, slot.Definition.Template, slot.Economy.SellValue
 		slot.Egg:Destroy()
 		slot.Egg, slot.Definition, slot.Economy = nil, nil, nil
 		coins.Value += amount
+		Telemetry.source(player, amount, coins.Value, "Sell" .. template)
 		refreshSlot(slot)
 		changeRate()
 		notice(player, name .. " sold for " .. amount .. " coins.")
@@ -233,6 +236,7 @@ function Plot.new(plot, callbacks, notice)
 		end
 		local amount = ledger:collect(os.clock())
 		coins.Value += amount
+		Telemetry.source(player, amount, coins.Value, "CollectEggIncome")
 		publish()
 		notice(player, amount > 0 and "Collected " .. amount .. " coins!" or "No income ready yet. Placed eggs earn while you play.")
 		return true

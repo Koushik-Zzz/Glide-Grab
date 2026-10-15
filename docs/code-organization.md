@@ -76,3 +76,7 @@ The workshop is public but its existing private boost levels, prices and cooldow
 | `ui/SkyCombatHUD.model.json` | Editable four-action GUI. |
 
 EggLoop's server-only HasCargo, ProtectCargo and TryAirSteal bindings use private Claims records. Claims transfers a record atomically while preserving Economy/EggId and the exclusive source lock. EggLoop replaces welds/death binding so the former owner's lifecycle cannot release the new owner's cargo. Glider/boost read server character deadlines to yield during combat. A guardian slap clears a player stun before taking over physical motion; player actions exclude active guardian knockback.
+
+## Shared UI presentation
+
+`ui/FlightHUD.model.json` supplies the editable currency, objective, cargo and status shell in StarterGui. The boost, combat and rebirth screens retain their own authored templates and controllers. `scripts/ui/Theme.lua` holds presentation colors and number formatting, `Layout.lua` assigns common non-overlapping HUD regions, `Motion.lua` owns short interruptible button/pop tweens and their cleanup, and `Notices.lua` combines temporary portal/boost messages in one status region. These shared client modules are mapped into ReplicatedStorage/UIModules. They read server-published state and do not decide prices, purchases, saving or combat outcomes. See [stud UI design and checks](stud-ui.md).

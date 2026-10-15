@@ -72,6 +72,10 @@
       "CombatClientModules": {
         "$path": "scripts/combat_client",
         "$ignoreUnknownInstances": true
+      },
+      "UIModules": {
+        "$path": "scripts/ui",
+        "$ignoreUnknownInstances": true
       }
     },
     "StarterGui": {
@@ -87,6 +91,10 @@
       },
       "SkyCombatHUD": {
         "$path": "ui/SkyCombatHUD.model.json",
+        "$ignoreUnknownInstances": true
+      },
+      "GlideAndGrabHUD": {
+        "$path": "ui/FlightHUD.model.json",
         "$ignoreUnknownInstances": true
       }
     },

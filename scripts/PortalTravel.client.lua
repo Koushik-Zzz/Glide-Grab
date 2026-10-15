@@ -3,6 +3,10 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
+local uiModules = ReplicatedStorage:WaitForChild("UIModules")
+local Theme = require(uiModules.Theme)
+local Notices = require(uiModules.Notices)
+local GuiService = game:GetService("GuiService")
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage:WaitForChild("PortalTravel")
 
@@ -16,7 +20,7 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 local curtain = Instance.new("Frame")
 curtain.Name = "Curtain"
 curtain.Size = UDim2.fromScale(1, 1)
-curtain.BackgroundColor3 = Color3.fromRGB(18, 38, 47)
+curtain.BackgroundColor3 = Color3.fromRGB(13, 30, 47)
 curtain.BackgroundTransparency = 1
 curtain.BorderSizePixel = 0
 curtain.Active = true
@@ -29,9 +33,11 @@ title.AnchorPoint = Vector2.new(0.5, 0.5)
 title.Position = UDim2.fromScale(0.5, 0.46)
 title.Size = UDim2.new(0.9, 0, 0, 55)
 title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(221, 255, 240)
-title.TextSize = 32
-title.Font = Enum.Font.GothamBold
+title.TextColor3 = Theme.Sky
+title.TextSize = 38
+title.Font = Enum.Font.FredokaOne
+title.TextStrokeColor3 = Theme.Ink
+title.TextStrokeTransparency = 0
 title.TextTransparency = 1
 title.Text = ""
 title.Parent = curtain
@@ -41,51 +47,19 @@ hint.Name = "Hint"
 hint.Position = UDim2.fromScale(0.5, 0.54)
 hint.TextSize = 17
 hint.Font = Enum.Font.Gotham
+hint.TextColor3 = Theme.White
+hint.TextStrokeTransparency = 1
 hint.Text = "Getting your landing area ready…"
 hint.Parent = curtain
 
-local notice = Instance.new("TextLabel")
-notice.Name = "Notice"
-notice.AnchorPoint = Vector2.new(0.5, 0)
-notice.Position = UDim2.fromScale(0.5, 0.28)
-notice.Size = UDim2.new(0.88, 0, 0, 64)
-notice.BackgroundColor3 = Color3.fromRGB(35, 58, 68)
-notice.BackgroundTransparency = 0.06
-notice.TextColor3 = Color3.fromRGB(255, 235, 179)
-notice.TextSize = 17
-notice.TextWrapped = true
-notice.Font = Enum.Font.GothamBold
-notice.Visible = false
-notice.ZIndex = 2
-notice.Parent = gui
-local sizeLimit = Instance.new("UISizeConstraint")
-sizeLimit.MaxSize = Vector2.new(480, 64)
-sizeLimit.Parent = notice
-local padding = Instance.new("UIPadding")
-padding.PaddingLeft = UDim.new(0, 14)
-padding.PaddingRight = UDim.new(0, 14)
-padding.Parent = notice
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 16)
-corner.Parent = notice
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local activeId = nil
 local revision = 0
-local noticeVersion = 0
 local tweens = {}
 
 local function showNotice(message)
-	if type(message) ~= "string" or message == "" then return end
-	noticeVersion = noticeVersion + 1
-	local version = noticeVersion
-	notice.Text = message
-	notice.Visible = true
-	task.delay(4, function()
-		if noticeVersion == version then
-			notice.Visible = false
-		end
-	end)
+	Notices.show(message, 4)
 end
 
 local function fade(covered, version)
@@ -93,10 +67,11 @@ local function fade(covered, version)
 		tween:Cancel()
 	end
 	local transparency = covered and 0 or 1
+	local duration = GuiService.ReducedMotionEnabled and 0.05 or 0.22
 	tweens = {
-		TweenService:Create(curtain, TweenInfo.new(0.22), {BackgroundTransparency = transparency}),
-		TweenService:Create(title, TweenInfo.new(0.22), {TextTransparency = transparency}),
-		TweenService:Create(hint, TweenInfo.new(0.22), {TextTransparency = transparency}),
+		TweenService:Create(curtain, TweenInfo.new(duration), {BackgroundTransparency = transparency}),
+		TweenService:Create(title, TweenInfo.new(duration), {TextTransparency = transparency}),
+		TweenService:Create(hint, TweenInfo.new(duration), {TextTransparency = transparency}),
 	}
 	curtain.Visible = true
 	for _, tween in ipairs(tweens) do
@@ -149,7 +124,7 @@ remote.OnClientEvent:Connect(function(action, id, position, biome, recovery)
 		revision = revision + 1
 		local version = revision
 		activeId = id
-		notice.Visible = false
+		Notices.clear()
 		title.Text = recovery and ("Returning to " .. biome) or biome
 		hint.Text = recovery and "Stay inside the biome and use its portals to travel." or "Getting your landing area ready…"
 		-- The server has its own deadlines and unfreezes cancelled trips. This
@@ -210,6 +185,6 @@ player.CharacterRemoving:Connect(function()
 		remote:FireServer("Cancel", activeId)
 	end
 	resetPresentation()
-	notice.Visible = false
+	Notices.clear()
 end)
 remote:FireServer("ClientReady")

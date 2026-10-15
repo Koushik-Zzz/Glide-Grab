@@ -5,6 +5,11 @@ local ContextActionService = game:GetService("ContextActionService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local modules = ReplicatedStorage:WaitForChild("UIModules")
+local Layout = require(modules.Layout)
+local Motion = require(modules.Motion)
+local Theme = require(modules.Theme)
+local motion = Motion.new()
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage:WaitForChild("SkyCombat")
 local Effects = require(ReplicatedStorage:WaitForChild("CombatClientModules"):WaitForChild("Effects"))
@@ -26,17 +31,14 @@ local function request(action)
 end
 local function layout()
 	local size = root.AbsoluteSize
-	local compact = size.Y < 540 and size.X >= 460
-	bar.Size = UDim2.fromOffset(264, 56)
-	if compact then
-		bar.AnchorPoint = Vector2.zero
-		bar.Position = UDim2.fromOffset(16, 204)
-	elseif size.X < 760 or UserInputService.TouchEnabled then
-		bar.AnchorPoint = Vector2.new(0.5, 0)
-		bar.Position = UDim2.new(0.5, 0, 0, 286)
-	else
-		bar.AnchorPoint = Vector2.new(0, 1)
-		bar.Position = UDim2.new(0, 16, 1, -24)
+	if size.X <= 0 then return end
+	local regions = Layout.forSize(size, UserInputService.TouchEnabled)
+	Layout.place(bar, regions.Actions)
+	local width = (regions.Actions[3] - 24) / 4
+	for index, action in ipairs({"Slap", "Bat", "Steal", "Shield"}) do
+		bar[action].Position = UDim2.fromOffset((index - 1) * (width + 8), 0)
+		bar[action].Size = UDim2.fromOffset(width, regions.Actions[4])
+		bar[action].ActionName.TextLimit.MaxTextSize = regions.Mode == "Compact" and 14 or 16
 	end
 end
 local function context()
@@ -62,6 +64,7 @@ local function context()
 	end
 end
 for action in pairs(keys) do
+	motion:button(bar[action])
 	table.insert(connections, bar[action].Activated:Connect(function()
 		request(action)
 	end))
@@ -72,7 +75,7 @@ local function render()
 	local gamepad = string.find(input.Name, "Gamepad") ~= nil
 	for action, key in pairs(keys) do
 		local waitTime = math.max(0, (player:GetAttribute(action .. "ReadyAt") or 0) - now)
-		local prefix = UserInputService.TouchEnabled and "" or (gamepad and padText[action] or key.Name) .. "\n"
+		local prefix = input == Enum.UserInputType.Touch and "" or (gamepad and padText[action] or key.Name)
 		local name = action == "Shield" and ("Shield ×" .. (player:GetAttribute("EggShieldCharges") or 0)) or action
 		local c = player.Character
 		local cargo = c and c:FindFirstChild("CarriedEgg")
@@ -81,9 +84,16 @@ local function render()
 			name = "Shielded"
 			waitTime = protectedUntil - now
 		end
-		bar[action].Text = prefix .. name .. (waitTime > 0 and string.format("\n%.1fs", waitTime) or "")
+		local button = bar[action]
+		button.Key.Text = prefix
+		button.ActionName.Text = name
+		button.Cooldown.Text = waitTime > 0 and string.format("%.1fs", waitTime) or ""
 		local available = action ~= "Bat" or player:GetAttribute("OwnsBat")
-		bar[action].TextTransparency = available and 0 or 0.4
+		button:SetAttribute("UIDisabled", not available or waitTime > 0)
+		button.ActionName.TextColor3 = available and Theme.White or Theme.Muted
+		if not available then
+			button.Cooldown.Text = "Shop"
+		end
 	end
 end
 table.insert(connections, player:GetAttributeChangedSignal("CurrentBiome"):Connect(context))
@@ -116,4 +126,5 @@ script.Destroying:Connect(function()
 		ContextActionService:UnbindAction("Sky" .. action)
 	end
 	effects:destroy()
+	motion:destroy()
 end)

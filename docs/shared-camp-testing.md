@@ -1,30 +1,99 @@
-# Shared camp verification — 14 October 2026
+# Shared camp and friend playtest — 15 October 2026
 
-The direct MCP startup tool supports one Play client. The StudioTestService API was subsequently used for an actual two-client pickup/placement/race test; see docs/egg-offers.md. Do not treat the two-owner Edit fixture as networking verification or that focused run as the entire matrix below.
+Use the full `backup_update.rbxl` scene with the current Rojo sources. Six gardens
+are authored. Each owner starts with six pillows and unlocks twelve after the
+first rebirth. Shops and biome portals are shared; purchases, carried eggs,
+collections and progression are private server state.
 
-## Executed
+## Existing executed evidence
 
-- Six real authored gardens, 36 pillows, separate pads, public plaza outside plot bounds, inward-facing gates, both green checker colors.
-- One Play client: Plot1 allocation, other-plot prompts hidden, shared portal trip with carried egg, own-pillow placement, own-pad income claim, public workshop purchase for 200 coins, character respawn preserving egg/plot/boost.
-- Temporary runtime requirement 1: native prompt blocked count 0 and accepted private count 2. A Studio-only server Script changed test progression through the production module; it destroyed itself and all test state disappeared on Stop.
-- Production Plot module with Player test doubles and real cloned characters/plots in Edit: separate Common 1/sec and Uncommon 3/sec, private-owner rejection despite a forged OwnerUserId attribute, separate claims, range/death/debounce rejection, release clearing only that plot and reclaim starting empty. Fixtures removed.
-- Rojo build/sourcemap and offline Luau lint; no full Roblox type-checking or device emulation claimed.
+- Two actual StudioTestService clients received different gardens, independently
+  picked up the same Common source, returned and placed separate eggs. An
+  exclusive offer was awarded to only one player during a pickup race. See
+  `docs/egg-offers.md` for the focused pickup run.
+- Two-client progression run: private shop purchases, pre-rebirth Storm denial,
+  native rebirth confirmation, reset of only the confirming player's coins,
+  eggs and boost, retained bat/shield charges, twelve versus six usable pillows,
+  both Storm portal directions and upstairs Epic placement. The stored Epic
+  retained its 1,352/sec roll and identity. Respawn preserved the collection.
+- Current two-client combat regression, with the final stud UI and telemetry
+  sources: separate 5,000-coin bat, 500-coin boost and 3,000-coin shield purchases;
+  safe base; slap/bat stun without health loss or cargo deletion; stun cleanup;
+  shield rejection; malformed/unowned-bat rejection; grounded theft rejection;
+  successful air transfer retaining a Low Rare at 390/sec and scale
+  1.161111; immediate take-back rejection; former carrier respawn cleanup; and
+  placement/income by the new owner. These are automation results, not a human
+  judgement of combat feel.
+- Edit fixtures exercised production Plot ownership, range/death/debounce checks,
+  separate ledgers and forged display attributes. These fixtures alone do not
+  prove networking behaviour.
+- Saved collection restoration was exercised through production Session and Plot
+  with a deterministic test backend. Cloud saving is a separate check below.
 
-## Prepared, not run: Studio Server & Clients
+The current native-input combat fixtures are
+`tests/multiplayer-combat.server.lua` and `.client.lua`, using
+`ExecuteMultiplayerTestAsync(2, "SkyCombatProof")`. Early reruns stopped at shop
+automation: client test teleports had not reached the server, and fixed short
+holds ended before the background client's native prompt completed. The final
+fixture waits for a server-observed position acknowledgement, the native
+PromptShown event and Triggered/entitlement completion before ending its hold.
+Both clients acknowledge scripted pose stages before attacks. Production
+distance checks and purchases were kept intact. This uses scripted setup
+positions; it is not a latency, packet-loss or natural-flight playtest.
 
-Stop Play, then use Studio's Server & Clients test mode with two clients:
+The final complete two-client regression passed. Studio returned to Edit and
+all temporary fixture Scripts, reporting remotes and modules were removed.
 
-1. Both join: different CampPlotId and gate owner names, six slots each.
-2. Each client sees only their own garden prompts. Workshop and Meadow portal visible to both.
-3. Both travel to Meadow. Both should receive independent Common copies from the same source, which stays available. Race for Uncommon/Rare: exactly one carrier receives the exclusive offer; the other gets no duplicate.
-4. Retrieve one Common and one Uncommon, return, place on own pillows. Rates are 1/sec and 3/sec, not summed or overwritten between players.
-5. Walk/fly into the other plot. Attempt place, replace, sell and collect; both ledgers, displayed eggs, coins and carried cargo remain unchanged.
-6. Claim income concurrently at each private pad: only the claimant's balance changes.
-7. Both use the public shop: private next prices and levels, one player's purchase leaves the other's coins/boost unchanged.
-8. For this test only, create a temporary Studio-only server Script that requires ProgressionModules.Progression and sets one player to 0 and the other to 2. Set the runtime entry field RequiredRebirths to 1. Count 0 is blocked with a notice only on that client; count 2 enters. A local client attribute edit to Rebirths must not unlock it. Remove the temporary Script after the test; do not use an MCP require cache to modify the running server's private progression.
-9. Reset either character mid-flight/travel. Their plot/eggs survive and the other player's state remains untouched.
-10. Disconnect one client. Only that garden clears. Rejoin assigns an empty available plot; this session-only prototype does not restore previous earnings.
-11. Test six joins and a seventh overflow: six unique allocations; seventh waits without access to others. Leave an owner: the waiting player receives the empty garden.
-12. Inspect server and every client Output, including rapid E/F holds and travel cancellation. Stop tests, remove test progression modifications, restart clean.
+The open local scene still reports `GameId == 0` and `PlaceId == 0`; its clearly
+labeled local preview resets between Play sessions. A successful Studio run does
+not establish that the published build or Roblox cloud backend has been tested.
 
-The published maximum-player setting is unchanged. Configure six players in the experience's settings before release, then repeat ownership, lifecycle and input checks on the published test experience.
+## Two-person published test
+
+Publish the current full scene to the owner's testing experience, then both
+people join that same server from Roblox Player. One person should use **Join**
+from the other's profile/experience server list if needed. Set the experience's
+maximum server size to six before broader testing; the currently inspected local
+place reports a maximum of thirty. This document does not change publication,
+access permissions or the server-size setting.
+
+Record a short video from both players, or write down the values in the table.
+Start each case with empty hands unless it specifically needs carried cargo.
+
+| Case | Actions | Expected result |
+| --- | --- | --- |
+| Separate gardens | Join together and inspect gate names and blue pads. | Different CampPlotId/garden names; each player sees their own prompts. |
+| Shared Common | Both approach the same Common egg and grab at almost the same time. | Both carry independent copies; the source remains available; one egg per player. |
+| Exclusive race | With empty hands, both try the same Rare offer. | Exactly one receives it. Its source stays unavailable while it is carried, then respawns after the configured delay. |
+| Own placement | Return and place eggs on the two private gardens. | Only the placing player's count/rate changes; the egg remains on its pillow. |
+| Foreign garden | Visit the other plot; attempt place, replace, sell and income collection. | No other-owner egg, ledger or coin change; carried cargo is retained. |
+| Independent upgrades | Both buy a boost level or gear at the shared shop. | Each pays their own quoted price and receives only their own entitlement. |
+| Safe landing | Try Q/R/F in camp and near a biome landing; then leave the safe radius and wait out arrival grace. | Camp/landing reject attacks and theft. Gear works only in eligible outdoor areas after grace. |
+| Slap / bat | Outside safety, stand/fly within range facing the opponent and use Q/R. | A readable hand-held swing, brief knockback/stun and recovery; no health damage or automatic egg loss. |
+| Miss and distance | Swing facing away, from too far away and with a solid obstacle between players. | No hit. The visible swing alone does not grant a hit. |
+| Air theft | Carry a Rare or Storm egg; both glide more than seven studs above ground. Empty-handed pursuer gets close behind and uses F. | One transfer, old carrier empty, new carrier has the same tier/income/size. Grounded or occupied-hand theft fails. |
+| Transfer grace | Immediately try to steal the egg back, then retry after six seconds. | Immediate return theft fails; later valid theft can work. |
+| Shield | Buy a charge; while carrying an egg outside safety use G, then let the other player attempt F. | One charge spent; theft blocked for twelve seconds. A second shield cannot stack; the Meadow bird can still catch protected cargo. |
+| Former owner reset | After a successful theft, reset the former carrier's character. | Stolen cargo stays with its new owner; the source is still reserved. |
+| Guardian catch | Take a guarded Meadow egg and let the bird physically hit the carrier. | Knockback and egg loss occur together; a failed pass does not remove the egg. Guardian returns and can chase a later heist. |
+| Rebirth gate | A zero-rebirth player tries Storm while a reborn player enters. | Only the privately eligible player travels; higher rebirths continue satisfying a minimum requirement. |
+| Respawn | Reset either player mid-flight and return to camp. | Their stored collection/boost/gear remain; carried cargo is lost; the other player's state is untouched. |
+| Leave and rejoin | Follow the persistence checklist in `docs/saving-and-first-rebirth.md`. | Stored offers and progression restore into an available garden; carried cargo does not. |
+
+Human feedback to record: whether a hit looked fair, whether the theft range was
+understandable, whether the shield feedback was clear, and whether the chase was
+fun for both the thief and the carrier. Automation cannot answer those questions.
+
+## Six-player follow-up
+
+Check six unique garden allocations, simultaneous Common access, exclusive-egg
+wait times, portal/guardian responsiveness and independent shop purchases. With
+an overflow test with more than six players, a seventh player waits without access to
+another garden; when an owner leaves, only that garden clears and the waiting
+player's own saved collection should restore there. This overflow restoration
+has not yet been executed with seven actual clients.
+
+Capture server and client Output for errors. Do not use an obsolete public
+progression setter or weaken eligibility for testing; the current progression
+owner is the loaded private profile. Temporary test fixtures must stay unmapped,
+Studio-only and be removed from the Edit scene before saving or publishing.

@@ -49,7 +49,10 @@ function Session.open(store, key, token, options)
 		local writeId = token .. ":" .. serial
 		local frozen = Schema.copy(snapshot)
 		local succeeded, failure = false, "unavailable"
-		for attempt = 1, 3 do
+		-- A final departure has no later autosave to repair a transient failure.
+		-- Five attempts wait at most 18 seconds, leaving shutdown time for I/O.
+		local attempts = release and 5 or 3
+		for attempt = 1, attempts do
 			local accepted, lost = false, false
 			local ok = pcall(function()
 				store:UpdateAsync(key, function(old)
@@ -79,8 +82,8 @@ function Session.open(store, key, token, options)
 				failure = "lost session"
 				break
 			end
-			if attempt < 3 then
-				pause(2 ^ attempt)
+			if attempt < attempts then
+				pause(math.min(2 ^ attempt, 6))
 			end
 		end
 		self.Busy = false
@@ -88,6 +91,46 @@ function Session.open(store, key, token, options)
 			self.LastSuccess = clock()
 			self.Closed = release == true
 		end
+		return succeeded, failure
+	end
+	-- An exhausted response retry cannot tell whether a checkpoint committed.
+	-- Release only the lease, preserving the BACKEND data for the next load.
+	-- In particular, never write a stale pre-rebirth snapshot over that outcome.
+	function api:releaseCurrent()
+		if self.Busy or self.Closed then return false, "busy" end
+		self.Busy = true
+		local succeeded, failure = false, "unavailable"
+		for attempt = 1, 3 do
+			local accepted, lost = false, false
+			local ok = pcall(function()
+				store:UpdateAsync(key, function(old)
+					accepted, lost = false, false
+					if not old or (old.Session and old.Session.Token ~= token) then
+						lost = true
+						return nil
+					end
+					accepted = true
+					if not old.Session then return nil end -- Retry after a lost release response.
+					local nextValue = Schema.copy(old)
+					nextValue.Session = nil
+					return nextValue
+				end)
+			end)
+			if ok and accepted then
+				succeeded = true
+				break
+			end
+			if ok and lost then
+				failure = "lost session"
+				break
+			end
+			if attempt < 3 then
+				pause(2 ^ attempt)
+			end
+		end
+		self.Busy = false
+		-- This handle must never write again, even if the release was unavailable.
+		self.Closed = true
 		return succeeded, failure
 	end
 	return api

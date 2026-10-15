@@ -1,175 +1,53 @@
--- Rojo manages FlightHUD in StarterPlayer > StarterPlayerScripts.
--- Reads EggLoop cargo and PortalLoop's CurrentBiome player attribute.
--- Reads Coins and the server-created CarriedEgg. Rewards stay on the server.
--- Compact HUD: coins, objective banner, carried egg badge, animated reward.
-
+-- Render the editable StarterGui shell; all rewards and cargo remain server owned.
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+local RS = game:GetService("ReplicatedStorage")
+local modules = RS:WaitForChild("UIModules")
+local Theme = require(modules.Theme)
+local Layout = require(modules.Layout)
+local Motion = require(modules.Motion)
+local Notices = require(modules.Notices)
+local motion = Motion.new()
 local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
-local existing = playerGui:FindFirstChild("GlideAndGrabHUD")
-if existing then
-	warn("FlightHUD already exists. Keep only one FlightHUD LocalScript.")
-	return
+local gui = player:WaitForChild("PlayerGui"):WaitForChild("GlideAndGrabHUD")
+local canvas = gui.SafeScreen
+local coinCard, missionCard, cargoCard, windCard = canvas.Coins, canvas.Objective, canvas.Cargo, canvas.WindWarning
+local coinLabel, incomeLabel, saveCaption = coinCard.Amount, coinCard.Income, coinCard.Caption
+local coinScale, cargoScale = coinCard.FeedbackScale, cargoCard.FeedbackScale
+local missionIcon = missionCard.Direction
+local missionTitle, missionHint = missionCard.Title, missionCard.Hint
+local cargoName, cargoValue = cargoCard.EggName, cargoCard.Value
+local windText, pickupNotice = windCard.Status, canvas.PickupNotice
+local colors = {gold = Theme.Gold, mint = Theme.Sky, amber = Theme.Gold, white = Theme.White}
+local missionBaseHint = "Use a camp portal to explore"
+local connections, alive = {}, true
+local function track(connection)
+	table.insert(connections, connection)
+	return connection
 end
-
-local colors = {
-	ink = Color3.fromRGB(35, 58, 68),
-	muted = Color3.fromRGB(82, 111, 120),
-	cream = Color3.fromRGB(255, 252, 237),
-	gold = Color3.fromRGB(255, 202, 62),
-	goldEdge = Color3.fromRGB(187, 119, 26),
-	mint = Color3.fromRGB(221, 255, 240),
-	teal = Color3.fromRGB(28, 130, 110),
-	amber = Color3.fromRGB(255, 235, 179),
-	white = Color3.fromRGB(255, 255, 255),
-}
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "GlideAndGrabHUD"
-gui.ResetOnSpawn = false
-gui.ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets
-gui.DisplayOrder = 10
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-local canvas = Instance.new("Frame")
-canvas.Name = "SafeScreen"
-canvas.Size = UDim2.fromScale(1, 1)
-canvas.BackgroundTransparency = 1
-canvas.Parent = gui
-
-local function round(object, radius)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, radius)
-	corner.Parent = object
-end
-
-local function outline(object, color, thickness)
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = color
-	stroke.Thickness = thickness
-	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	stroke.Parent = object
-	return stroke
-end
-
-local function frame(parent, name, position, size, color, radius)
-	local object = Instance.new("Frame")
-	object.Name = name
-	object.Position = position
-	object.Size = size
-	object.BackgroundColor3 = color
-	object.BorderSizePixel = 0
-	object.Parent = parent
-	if radius then
-		round(object, radius)
-	end
-	return object
-end
-
-local function label(parent, name, position, size, text, fontSize, color, font)
-	local object = Instance.new("TextLabel")
-	object.Name = name
-	object.Position = position
-	object.Size = size
-	object.BackgroundTransparency = 1
-	object.Font = font or Enum.Font.Gotham
-	object.TextSize = fontSize
-	object.TextColor3 = color
-	object.TextXAlignment = Enum.TextXAlignment.Left
-	object.TextYAlignment = Enum.TextYAlignment.Center
-	object.Text = text
-	object.Parent = parent
-	return object
-end
-
--- All icons are made from UI shapes, so they need no uploaded image assets.
-local coinCard = frame(canvas, "Coins", UDim2.fromOffset(16, 14), UDim2.fromOffset(166, 78), colors.cream, 18)
-outline(coinCard, colors.ink, 3)
-local coinScale = Instance.new("UIScale")
-coinScale.Parent = coinCard
-local coinIcon = frame(coinCard, "CoinIcon", UDim2.fromOffset(12, 10), UDim2.fromOffset(38, 38), colors.gold, 38)
-outline(coinIcon, colors.goldEdge, 2)
-local coinRim = frame(coinIcon, "Rim", UDim2.fromOffset(6, 6), UDim2.fromOffset(26, 26), colors.gold, 26)
-outline(coinRim, colors.cream, 2)
-local currency = label(coinRim, "Symbol", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), "$", 20, colors.goldEdge, Enum.Font.GothamBlack)
-currency.TextXAlignment = Enum.TextXAlignment.Center
-local saveCaption = label(coinCard, "Caption", UDim2.fromOffset(62, 7), UDim2.fromOffset(92, 15), "LOADING", 9, colors.muted, Enum.Font.GothamBold)
 local function refreshSave()
 	local status = player:GetAttribute("SaveStatus")
 	saveCaption.Text = status == "Saved" and "COINS • SAVED" or status == "Preview only" and "COINS • LOCAL"
-		or status == "Loading progress" and "LOADING" or "SAVE RETRY"
+		or status == "Loading progress" and "LOADING PROGRESS" or "COINS • SAVE RETRY"
 end
-player:GetAttributeChangedSignal("SaveStatus"):Connect(refreshSave)
+track(player:GetAttributeChangedSignal("SaveStatus"):Connect(refreshSave))
 refreshSave()
-local coinLabel = label(coinCard, "Amount", UDim2.fromOffset(62, 22), UDim2.fromOffset(92, 30), "--", 26, colors.ink, Enum.Font.GothamBlack)
-coinLabel.TextScaled = true
-local amountLimit = Instance.new("UITextSizeConstraint")
-amountLimit.MinTextSize = 14
-amountLimit.MaxTextSize = 26
-amountLimit.Parent = coinLabel
-local incomeLabel = label(coinCard, "Income", UDim2.fromOffset(12, 55), UDim2.fromOffset(142, 17), "+0/sec • Ready: 0", 11, colors.teal, Enum.Font.GothamBold)
-incomeLabel.TextScaled = true
-local incomeLimit = Instance.new("UITextSizeConstraint")
-incomeLimit.MinTextSize = 9
-incomeLimit.MaxTextSize = 11
-incomeLimit.Parent = incomeLabel
 local function refreshIncome()
-	incomeLabel.Text = string.format("+%d/sec • Ready: %d", player:GetAttribute("EggIncomeRate") or 0, player:GetAttribute("EggIncomePending") or 0)
+	incomeLabel.Text = "+" .. Theme.short(player:GetAttribute("EggIncomeRate")) .. "/sec   |   Ready: "
+		.. Theme.short(player:GetAttribute("EggIncomePending"))
 end
-player:GetAttributeChangedSignal("EggIncomeRate"):Connect(refreshIncome)
-player:GetAttributeChangedSignal("EggIncomePending"):Connect(refreshIncome)
+track(player:GetAttributeChangedSignal("EggIncomeRate"):Connect(refreshIncome))
+track(player:GetAttributeChangedSignal("EggIncomePending"):Connect(refreshIncome))
 refreshIncome()
-
-local missionCard = frame(canvas, "Objective", UDim2.new(0.5, 0, 0, 14), UDim2.fromOffset(326, 58), colors.mint, 18)
-missionCard.AnchorPoint = Vector2.new(0.5, 0)
-outline(missionCard, colors.ink, 3)
-local missionIcon = frame(missionCard, "RouteIcon", UDim2.fromOffset(12, 11), UDim2.fromOffset(36, 36), colors.teal, 36)
-local direction = label(missionIcon, "Direction", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), ">", 25, colors.white, Enum.Font.GothamBlack)
-direction.TextXAlignment = Enum.TextXAlignment.Center
-local missionTitle = label(missionCard, "Title", UDim2.fromOffset(60, 8), UDim2.new(1, -72, 0, 22), "Explore Meadow", 18, colors.ink, Enum.Font.GothamBold)
-local missionHint = label(missionCard, "Hint", UDim2.fromOffset(60, 31), UDim2.new(1, -72, 0, 17), "Enter the green Meadow portal", 12, colors.muted)
-missionTitle.TextScaled = true
-missionHint.TextScaled = true
-for _, entry in ipairs({{missionTitle, 18}, {missionHint, 12}}) do
-	local limit = Instance.new("UITextSizeConstraint")
-	limit.MinTextSize = 10
-	limit.MaxTextSize = entry[2]
-	limit.Parent = entry[1]
-end
-
-local cargoCard = frame(canvas, "Cargo", UDim2.new(0.5, 0, 1, -90), UDim2.fromOffset(268, 56), colors.amber, 18)
-cargoCard.AnchorPoint = Vector2.new(0.5, 1)
-cargoCard.Visible = false
-outline(cargoCard, colors.ink, 3)
-local cargoScale = Instance.new("UIScale")
-cargoScale.Parent = cargoCard
-local eggIcon = frame(cargoCard, "EggIcon", UDim2.fromOffset(18, 10), UDim2.fromOffset(26, 35), colors.cream, 26)
-eggIcon.Rotation = -10
-outline(eggIcon, colors.goldEdge, 2)
-frame(eggIcon, "Spot1", UDim2.fromOffset(5, 12), UDim2.fromOffset(7, 8), colors.gold, 7)
-frame(eggIcon, "Spot2", UDim2.fromOffset(15, 22), UDim2.fromOffset(6, 6), colors.gold, 6)
-local cargoName = label(cargoCard, "EggName", UDim2.fromOffset(58, 7), UDim2.new(1, -70, 0, 24), "Common Egg", 17, colors.ink, Enum.Font.GothamBold)
-local cargoValue = label(cargoCard, "Value", UDim2.fromOffset(58, 31), UDim2.new(1, -70, 0, 17), "+1 coin/sec when placed", 12, colors.goldEdge)
-
-local windCard = frame(canvas, "WindWarning", UDim2.new(0.5, 0, 0, 84), UDim2.fromOffset(326, 42), colors.ink, 12)
-windCard.AnchorPoint = Vector2.new(0.5, 0)
-windCard.Visible = false
-local windText = label(windCard, "Status", UDim2.fromOffset(12, 4), UDim2.new(1, -24, 1, -8), "", 14, colors.mint, Enum.Font.GothamBold)
-windText.TextXAlignment = Enum.TextXAlignment.Center
-windText.TextWrapped = true
-
-local pickupNotice = label(canvas, "PickupNotice", UDim2.new(0.5, 0, 1, -192), UDim2.fromOffset(320, 32), "", 20, colors.mint, Enum.Font.GothamBold)
-pickupNotice.AnchorPoint = Vector2.new(0.5, 0)
-pickupNotice.TextXAlignment = Enum.TextXAlignment.Center
-pickupNotice.TextStrokeTransparency = 0.25
-pickupNotice.Visible = false
 local pickupVersion = 0
 local pickupTween = nil
 
 local function showPickup(name)
+	-- The compact landscape composition already shows the cargo summary beside
+	-- the controls; an extra floating line would obscure the boost button.
+	if Layout.forSize(canvas.AbsoluteSize, UserInputService.TouchEnabled).Mode == "Compact" then return end
 	pickupVersion = pickupVersion + 1
 	local version = pickupVersion
 	if pickupTween then
@@ -177,95 +55,73 @@ local function showPickup(name)
 	end
 	pickupNotice.Text = "Got " .. name .. "!"
 	pickupNotice.TextTransparency = 0
-	pickupNotice.TextStrokeTransparency = 0.25
+	pickupNotice.Outline.Transparency = 0
 	pickupNotice.Visible = true
 	task.delay(1.1, function()
-		if pickupVersion ~= version then return end
-		pickupTween = TweenService:Create(pickupNotice, TweenInfo.new(0.35), {TextTransparency = 1, TextStrokeTransparency = 1})
+		if not alive or pickupVersion ~= version then return end
+		pickupTween = TweenService:Create(pickupNotice, TweenInfo.new(0.35), {TextTransparency = 1})
 		pickupTween:Play()
+		motion:to(pickupNotice.Outline, 0.35, {Transparency = 1})
 	end)
 	task.delay(1.5, function()
-		if pickupVersion == version then
+		if alive and pickupVersion == version then
 			pickupNotice.Visible = false
 		end
 	end)
 end
 
 local function refreshWind()
-	local combatMessage = player:GetAttribute("PvPMessage")
-	if combatMessage and not player:GetAttribute("PortalTraveling") then
-		windCard.Visible = true
-		windText.Text = combatMessage
-		windText.TextColor3 = colors.amber
-		return
-	end
+	local traveling = player:GetAttribute("PortalTraveling")
+	local message = Notices.current() or player:GetAttribute("PvPMessage")
 	local state = player:GetAttribute("MeadowWindState")
-	local guardianMessage = player:GetAttribute("GuardianMessage")
-	local collectionMessage = player:GetAttribute("CollectionMessage")
-	if collectionMessage and player:GetAttribute("CurrentBiome") == "Base Camp"
-		and not player:GetAttribute("PortalTraveling") then
-		windCard.Visible = true
-		windText.Text = collectionMessage
-		windText.TextColor3 = colors.mint
-		return
+	local collection = player:GetAttribute("CollectionMessage")
+	local guardian = player:GetAttribute("GuardianMessage")
+	if not message and player:GetAttribute("CurrentBiome") == "Base Camp" then
+		message = collection
 	end
-	if guardianMessage and guardianMessage ~= "" and not player:GetAttribute("PortalTraveling") then
-		windCard.Visible = true
-		windText.Text = guardianMessage
-		windText.TextColor3 = colors.amber
-		return
+	if not message and guardian and guardian ~= "" then
+		message = guardian
 	end
-	windCard.Visible = state ~= nil and state ~= "" and not player:GetAttribute("PortalTraveling")
 	local velocity = player:GetAttribute("MeadowWindVelocity")
 	local arrow = typeof(velocity) == "Vector3" and velocity.X < 0 and "←" or "→"
-	windText.Text = state == "Gust" and ("CROSSWIND " .. arrow .. " steer against it or go around")
-		or state == "Warning" and "Wind picking up — get ready to steer!"
-		or "Wind is calm — a good time to cross"
-	windText.TextColor3 = state == "Calm" and colors.mint or colors.amber
+	local visible = (message ~= nil or (state ~= nil and state ~= "")) and not traveling
+	windText.Text = message or (state == "Gust" and ("CROSSWIND " .. arrow .. " Steer against it!")
+		or state == "Warning" and "Wind picking up • get ready!" or "Calm winds • a good time to cross")
+	windText.TextColor3 = message and colors.amber or state == "Calm" and colors.mint or colors.amber
+	local regions = Layout.forSize(canvas.AbsoluteSize, UserInputService.TouchEnabled)
+	windCard.Visible = visible and not regions.HideWind
+	missionHint.Text = regions.HideWind and visible and windText.Text or missionBaseHint
 end
-player:GetAttributeChangedSignal("MeadowWindState"):Connect(refreshWind)
-player:GetAttributeChangedSignal("GuardianMessage"):Connect(refreshWind)
-player:GetAttributeChangedSignal("PvPMessage"):Connect(refreshWind)
-player:GetAttributeChangedSignal("PortalTraveling"):Connect(refreshWind)
-player:GetAttributeChangedSignal("CollectionMessage"):Connect(refreshWind)
-player:GetAttributeChangedSignal("CurrentBiome"):Connect(refreshWind)
+track(Notices.subscribe(refreshWind))
+track(player:GetAttributeChangedSignal("MeadowWindState"):Connect(refreshWind))
+track(player:GetAttributeChangedSignal("MeadowWindVelocity"):Connect(refreshWind))
+track(player:GetAttributeChangedSignal("GuardianMessage"):Connect(refreshWind))
+track(player:GetAttributeChangedSignal("PvPMessage"):Connect(refreshWind))
+track(player:GetAttributeChangedSignal("PortalTraveling"):Connect(refreshWind))
+track(player:GetAttributeChangedSignal("CollectionMessage"):Connect(refreshWind))
+track(player:GetAttributeChangedSignal("CurrentBiome"):Connect(refreshWind))
 refreshWind()
 
-local rewardLabel = label(canvas, "CoinReward", UDim2.fromOffset(24, 80), UDim2.fromOffset(100, 35), "", 25, colors.gold, Enum.Font.GothamBlack)
-rewardLabel.Visible = false
-local rewardStroke = Instance.new("UIStroke")
-rewardStroke.Color = colors.ink
-rewardStroke.Thickness = 2
-rewardStroke.Parent = rewardLabel
+local rewardLabel = canvas.CoinReward
+local rewardStroke = rewardLabel.Outline
 
 local function layout()
-	local width = canvas.AbsoluteSize.X
-	if width <= 0 then return end
-	local compact = canvas.AbsoluteSize.Y < 540 and width >= 460
-	-- Stack the banner below coins on narrow windows and phone screens.
-	missionCard.AnchorPoint = Vector2.new(0.5, 0)
-	windCard.AnchorPoint = Vector2.new(0.5, 0)
-	missionCard.Position = UDim2.new(0.5, 0, 0, width < 760 and 104 or 14)
-	missionCard.Size = UDim2.fromOffset(math.min(326, math.max(180, width - 32)), 58)
-	windCard.Position = UDim2.new(0.5, 0, 0, width < 760 and 174 or 84)
-	windCard.Size = UDim2.fromOffset(math.min(326, math.max(180, width - 32)), 42)
-	cargoCard.Size = UDim2.fromOffset(math.min(268, math.max(180, width - 32)), 56)
-	-- Leave a centered slot for the boost action above the default hotbar on touch/narrow screens.
-	local centeredBoost = not compact and (width < 760 or UserInputService.TouchEnabled)
-	cargoCard.Position = UDim2.new(0.5, 0, 1, centeredBoost and -158 or -90)
-	pickupNotice.Position = UDim2.new(0.5, 0, 1, centeredBoost and -238 or -192)
-	if compact then
-		missionCard.AnchorPoint = Vector2.new(1, 0)
-		missionCard.Position = UDim2.new(1, -16, 0, 14)
-		missionCard.Size = UDim2.fromOffset(math.min(326, width - 214), 58)
-		windCard.AnchorPoint = Vector2.zero
-		windCard.Position = UDim2.fromOffset(16, 104)
-		windCard.Size = UDim2.fromOffset(math.min(326, width - 228), 42)
-		pickupNotice.Position = UDim2.new(0.5, 0, 1, -86)
+	local size = canvas.AbsoluteSize
+	if size.X <= 0 then return end
+	local regions = Layout.forSize(size, UserInputService.TouchEnabled)
+	for name, object in pairs({Coins = coinCard, Objective = missionCard, Cargo = cargoCard, Wind = windCard}) do
+		Layout.place(object, regions[name])
 	end
+	coinLabel.Position = UDim2.fromOffset(12, regions.Mode == "Wide" and 22 or 18)
+	coinLabel.Size = UDim2.new(1, -24, 0, regions.Mode == "Wide" and 36 or 28)
+	missionHint.Position = UDim2.fromOffset(52, regions.Mode == "Wide" and 35 or 30)
+	missionTitle.Size = UDim2.new(1, -66, 0, regions.Mode == "Wide" and 24 or 20)
+	pickupNotice.Position = UDim2.fromOffset(regions.Cargo[1], regions.Cargo[2] - 36)
+	pickupNotice.Size = UDim2.fromOffset(regions.Cargo[3], 30)
+	refreshWind()
 end
-canvas:GetPropertyChangedSignal("AbsoluteSize"):Connect(layout)
-gui.Parent = playerGui
+track(canvas:GetPropertyChangedSignal("AbsoluteSize"):Connect(layout))
+track(UserInputService.LastInputTypeChanged:Connect(layout))
 layout()
 
 local rewardVersion = 0
@@ -286,28 +142,31 @@ local function showReward(gain)
 	if coinTween then
 		coinTween:Cancel()
 	end
-	local narrow = canvas.AbsoluteSize.X < 760
-	local rewardX = narrow and math.min(196, canvas.AbsoluteSize.X - 112) or 24
-	local rewardY = narrow and 25 or 108
-	rewardLabel.Text = "+" .. tostring(gain)
+	local regions = Layout.forSize(canvas.AbsoluteSize, UserInputService.TouchEnabled)
+	local rect = regions.Coins
+	local rewardX, rewardY = rect[1] + 12, rect[2] + rect[4] + 4
+	if regions.Mode ~= "Wide" then
+		rewardX, rewardY = rect[1] + 10, rect[2] + 24
+	end
+	rewardLabel.Text = "+$" .. Theme.short(gain)
 	rewardLabel.Position = UDim2.fromOffset(rewardX, rewardY)
 	rewardLabel.TextTransparency = 0
 	rewardStroke.Transparency = 0
 	rewardLabel.Visible = true
-	coinScale.Scale = 1.08
+	coinScale.Scale = GuiService.ReducedMotionEnabled and 1 or 1.055
 	coinTween = TweenService:Create(coinScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1})
 	coinTween:Play()
 	task.delay(0.65, function()
-		if version ~= rewardVersion then return end
+		if not alive or version ~= rewardVersion then return end
 		rewardTween = TweenService:Create(rewardLabel, TweenInfo.new(0.65), {
-			Position = UDim2.fromOffset(rewardX, rewardY - 17), TextTransparency = 1,
+			Position = UDim2.fromOffset(rewardX, rewardY - (GuiService.ReducedMotionEnabled and 0 or 14)), TextTransparency = 1,
 		})
 		rewardTween:Play()
 		rewardStrokeTween = TweenService:Create(rewardStroke, TweenInfo.new(0.65), {Transparency = 1})
 		rewardStrokeTween:Play()
 	end)
 	task.delay(1.35, function()
-		if version == rewardVersion then
+		if alive and version == rewardVersion then
 			rewardLabel.Visible = false
 		end
 	end)
@@ -329,19 +188,19 @@ local function refreshCargo()
 		local tier = egg:GetAttribute("EggTier")
 		cargoName.Text = (egg:GetAttribute("EggName") or "Common Egg")
 			.. (tier and tier ~= "Standard" and " • " .. tier or "")
-		cargoValue.Text = "+" .. tostring(egg:GetAttribute("IncomeRate") or 1) .. " coins/sec when placed"
+		cargoValue.Text = "+" .. Theme.short(egg:GetAttribute("IncomeRate") or 1) .. "/sec when placed"
 		local capacity = player:GetAttribute("EggDisplayCapacity") or 6
 		local full = capacity > 0 and (player:GetAttribute("EggDisplayCount") or 0) >= capacity
 		missionTitle.Text = inMeadow and "Fly back to camp!" or (full and "Pillows full!" or "Place your egg!")
 		missionHint.Text = inMeadow and "Fly to the blue return portal" or (full and "At a pillow: hold E replace / F sell" or "Use E at your pillow or blue pad")
 		missionCard.BackgroundColor3 = colors.amber
-		missionIcon.BackgroundColor3 = colors.goldEdge
+		missionIcon.TextColor3 = colors.white
 		if not wasVisible then
 			showPickup(cargoName.Text)
 			if cargoTween then
 				cargoTween:Cancel()
 			end
-			cargoScale.Scale = 0.88
+			cargoScale.Scale = GuiService.ReducedMotionEnabled and 1 or 0.94
 			cargoTween = TweenService:Create(cargoScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1})
 			cargoTween:Play()
 		end
@@ -350,18 +209,20 @@ local function refreshCargo()
 		missionTitle.Text = inMeadow and "Glide and find an egg" or (pending > 0 and "Income ready!" or "Explore Meadow")
 		missionHint.Text = inMeadow and ("Fly between the " .. biome .. " islands") or (pending > 0 and "Use E at your blue pad to collect" or "Use a camp portal to explore")
 		missionCard.BackgroundColor3 = colors.mint
-		missionIcon.BackgroundColor3 = colors.teal
+		missionIcon.TextColor3 = colors.gold
 	end
 	if not inMeadow and player:GetAttribute("EggDisplayCapacity") == 0 then
 		missionTitle.Text = "Waiting for a camp"
 		missionHint.Text = "All six gardens are occupied"
 	end
+	missionBaseHint = missionHint.Text
+	refreshWind()
 end
 
-player:GetAttributeChangedSignal("CurrentBiome"):Connect(refreshCargo)
-player:GetAttributeChangedSignal("EggDisplayCapacity"):Connect(refreshCargo)
-player:GetAttributeChangedSignal("EggDisplayCount"):Connect(refreshCargo)
-player:GetAttributeChangedSignal("EggIncomePending"):Connect(refreshCargo)
+track(player:GetAttributeChangedSignal("CurrentBiome"):Connect(refreshCargo))
+track(player:GetAttributeChangedSignal("EggDisplayCapacity"):Connect(refreshCargo))
+track(player:GetAttributeChangedSignal("EggDisplayCount"):Connect(refreshCargo))
+track(player:GetAttributeChangedSignal("EggIncomePending"):Connect(refreshCargo))
 refreshCargo()
 
 local function disconnectCharacter()
@@ -391,42 +252,64 @@ local function bindCharacter(newCharacter)
 	refreshCargo()
 end
 
-player.CharacterAdded:Connect(bindCharacter)
-player.CharacterRemoving:Connect(function(oldCharacter)
+track(player.CharacterAdded:Connect(bindCharacter))
+track(player.CharacterRemoving:Connect(function(oldCharacter)
 	if character == oldCharacter then
 		disconnectCharacter()
 		character = nil
 		refreshCargo()
 	end
-end)
+end))
 if player.Character then
 	bindCharacter(player.Character)
 end
 
 -- Build the HUD first, then wait for the existing server coin counter.
 task.spawn(function()
-	local stats = player:WaitForChild("leaderstats", 15)
+	local stats = player:WaitForChild("leaderstats", 60)
 	local coins = stats and stats:WaitForChild("Coins", 15)
+	if not alive then return end
 	if not coins or not coins:IsA("IntValue") then
 		warn("FlightHUD: Coins not found. Check EggLoop in ServerScriptService.")
 		return
 	end
 	local previous = coins.Value
+	local displayed = Instance.new("NumberValue")
+	displayed.Name = "DisplayedCoins"
+	displayed.Value = previous
+	displayed.Parent = gui
+	track(displayed.Changed:Connect(function(value)
+		coinLabel.Text = "$" .. Theme.short(value)
+	end))
+	script.Destroying:Once(function()
+		displayed:Destroy()
+	end)
 	local function refreshCoins()
 		local current = coins.Value
-		if current >= 1000000 then
-			coinLabel.Text = string.format("%.1fM", current / 1000000)
-		elseif current >= 10000 then
-			coinLabel.Text = string.format("%.1fK", current / 1000)
+		if GuiService.ReducedMotionEnabled then
+			displayed.Value = current
 		else
-			coinLabel.Text = tostring(current)
+			motion:to(displayed, 0.32, {Value = current})
 		end
+		coinLabel.Text = "$" .. Theme.short(displayed.Value)
 		local gain = current - previous
 		previous = current
 		if gain > 0 then
 			showReward(gain)
 		end
 	end
-	coins:GetPropertyChangedSignal("Value"):Connect(refreshCoins)
+	track(coins:GetPropertyChangedSignal("Value"):Connect(refreshCoins))
 	refreshCoins()
+end)
+
+script.Destroying:Connect(function()
+	alive = false
+	disconnectCharacter()
+	motion:destroy()
+	for _, connection in ipairs(connections) do
+		connection:Disconnect()
+	end
+	for _, tween in pairs({pickupTween, rewardTween, rewardStrokeTween, coinTween, cargoTween}) do
+		tween:Cancel()
+	end
 end)

@@ -56,19 +56,34 @@ local function snapshot(player, r)
 end
 function Profiles.save(player, release)
 	local r = records[player]
-	if not r or not r.Ready or r.Session.Closed then return false end
+	if not r or not r.Ready or r.UncertainCommit then return false end
+	if release and r.ReleaseStarted then
+		-- PlayerRemoving and BindToClose may arrive together. Share one final write.
+		while not r.ReleaseFinished do
+			task.wait(0.05)
+		end
+		return r.ReleaseSucceeded
+	end
+	if r.Session.Closed then return release == true end
+	local function finish(ok)
+		if release then
+			r.ReleaseSucceeded, r.ReleaseFinished = ok, true
+		end
+		return ok
+	end
 	if release then
+		r.ReleaseStarted = true
 		r.Closing = true
 		player:SetAttribute("DataLoaded", false)
 	end
 	while r.Session.Busy do
 		task.wait(0.05)
 	end
-	if r.Session.Closed then return true end
+	if r.Session.Closed then return finish(true) end
 	while r.Transaction do
 		task.wait(0.05)
 	end
-	if r.Session.Closed then return true end
+	if r.Session.Closed or r.UncertainCommit then return finish(not r.UncertainCommit) end
 	local captured, value = pcall(snapshot, player, r)
 	local ok, err = false, "capture failed"
 	if captured then
@@ -83,7 +98,7 @@ function Profiles.save(player, release)
 			player:Kick("Your save connection was interrupted. Please rejoin to protect your progress.")
 		end
 	end
-	return ok
+	return finish(ok)
 end
 function Profiles.commit(player, proposed, apply)
 	local r = records[player]
@@ -98,9 +113,17 @@ function Profiles.commit(player, proposed, apply)
 		return false
 	end
 	local ok, reason = r.Session:save(proposed, false)
-	if not ok and reason == "lost session" then
+	if not ok then
 		r.Closing = true
-		player:Kick("Your save moved to another server. Please rejoin to protect your progress.")
+		if reason == "lost session" then
+			player:Kick("Your save moved to another server. Please rejoin to protect your progress.")
+		else
+			-- A failed response can follow a successful backend write. Continuing with
+			-- old live data would let the next autosave undo the saved rebirth.
+			r.UncertainCommit = true
+			r.Session:releaseCurrent()
+			player:Kick("The rebirth save could not be confirmed. Please rejoin to load its saved outcome.")
+		end
 	end
 	if ok then
 		-- Keep existing server references valid (boost and gear own these records).
@@ -122,7 +145,7 @@ function Profiles.commit(player, proposed, apply)
 	r.Transaction = false
 	player:SetAttribute("DataLoaded", not r.Closing)
 	player:SetAttribute("SaveStatus", ok and (preview and "Preview only" or "Saved") or "Retrying save")
-	return ok
+	return ok, not ok and "rejoin" or nil
 end
 local function bind(player)
 	if records[player] then return end

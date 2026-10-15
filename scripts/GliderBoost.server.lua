@@ -5,6 +5,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local Profiles = require(script.Parent:WaitForChild("DataModules"):WaitForChild("Profiles"))
 local Config = require(ReplicatedStorage:WaitForChild("BoostModules"):WaitForChild("Config"))
+local Telemetry = require(script.Parent:WaitForChild("ProgressionModules"):WaitForChild("EconomyTelemetry"))
 local station = Workspace:WaitForChild("BoostWorkshop", 10)
 assert(station, "Create the camp BoostWorkshop with the Edit-mode setup")
 local prompt = station:WaitForChild("Counter"):WaitForChild("UpgradePrompt")
@@ -122,6 +123,7 @@ prompt.Triggered:Connect(function(player)
 	coins.Value -= nextSettings.Price
 	record.Level += 1
 	Profiles.get(player).BoostLevel = record.Level
+	Telemetry.purchase(player, nextSettings.Price, coins.Value, "BoostLevel" .. record.Level)
 	player:SetAttribute("BoostLevel", record.Level)
 	player:SetAttribute("BoostRecharge", nextSettings.Recharge)
 	remote:FireClient(player, "Boost upgraded! Longer burst, faster recharge")

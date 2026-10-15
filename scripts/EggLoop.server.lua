@@ -371,7 +371,7 @@ for index, definition in ipairs(definitions) do
 		local caption = Instance.new("TextLabel")
 		caption.Size = UDim2.fromScale(1, 1)
 		caption.BackgroundTransparency = 1
-		caption.Text = definition.Name .. "\\n" .. details .. (source.Shared and "\\nAvailable to everyone" or "")
+		caption.Text = definition.Name .. "\n" .. details .. (source.Shared and "\nAvailable to everyone" or "")
 		caption.TextColor3 = definition.Color
 		caption.TextStrokeTransparency = 0.2
 		caption.TextSize = 17

@@ -7,7 +7,9 @@ Open **`backup_update.rbxl`** to build the map and playtest the game. This is th
 
 The recovered file was inspected directly before the later feature work; the shared camps, perimeter walls, Meadow guardian, Rare egg template, combat shop/assets/HUD and skybox are present. Save both code files and the Studio place when making changes; a scripts-only Rojo build does not include the authored map.
 
-**Player saving and first rebirth are implemented and Studio-tested.** The 250,000-coin rebirth resets coins, stored eggs and boost while keeping gear. It unlocks 12 pillow slots and Storm Isles. The build/lint, 23 save/session assertions, native confirmation, two-player isolation/portal/Epic-placement checks and native garden restoration passed. Real cloud leave/rejoin remains a published-game check. Local unassociated files deliberately run a nonpersistent preview; published Studio tests and live servers use separate stores. Keep Rojo connected and save the full Studio place to preserve the authored scene and HUD. See [saving and first rebirth](docs/saving-and-first-rebirth.md) for exact rules and verification limits.
+**Player saving and first rebirth are implemented and Studio-tested.** The 250,000-coin rebirth resets coins, stored eggs and boost while keeping gear. It unlocks 12 pillow slots and Storm Isles. The build/lint, 36 save/session assertions, two-client save-failure recovery, native confirmation, two-player isolation/portal/Epic-placement checks and native garden restoration passed. Real cloud leave/rejoin remains a published-game check. Local unassociated files deliberately run a nonpersistent preview; published Studio tests and live servers use separate stores. Keep Rojo connected and save the full Studio place to preserve the authored scene and HUD. See [saving and first rebirth](docs/saving-and-first-rebirth.md) for exact rules and verification limits.
+
+The current polish pass adds an editable stud-style HUD and shared notifications. Owner-approved coin reporting runs only in published servers and appears in Roblox's Creator Dashboard; Studio sends no events. The [economy report and friend-test worksheet](docs/economy-playtest-report.md) explain current pacing and why prices remain unchanged until measured play. Publish the full testing scene before checking real saves or analytics receipt.
 
 ## What Rojo syncs
 
@@ -38,6 +40,8 @@ The project explicitly preserves unknown instances at every mapped level.
 
 Additional mappings: `scripts/data` → `ServerScriptService/DataModules`; `scripts/Rebirth.server.lua` → `ServerScriptService/Rebirth`; `scripts/Rebirth.client.lua` → `StarterPlayerScripts/Rebirth`; `ui/RebirthHUD.model.json` → `StarterGui/RebirthHUD`. Existing collection, progression and combat folders include their new modules automatically.
 
+The stud-style HUD is authored in `ui/FlightHUD.model.json` → `StarterGui/GlideAndGrabHUD`, alongside the boost, combat and rebirth templates. `scripts/ui` → `ReplicatedStorage/UIModules` shares the palette, layout regions and interruptible button feedback. FlightHUD reads the editable shell instead of constructing it at runtime. See [UI styling and verification](docs/stud-ui.md).
+
 ## Connect Studio
 
 1. Stop any running playtest and open the existing place.
@@ -59,7 +63,7 @@ If the terminal reports the port is already in use, a server may already be runn
 
 ## Imported egg models
 
-The three active art templates are `ServerStorage/EggModels/CommonEgg`, `UncommonEgg` and `RareEgg`. Each template can be a MeshPart, another BasePart, or a Model containing the parts of one egg. RareEgg reuses a spare imported design; the unused originals remain preserved.
+The active art templates are `ServerStorage/EggModels/CommonEgg`, `UncommonEgg`, `RareEgg` and `StormEgg`. Each template can be a MeshPart, another BasePart, or a Model containing the parts of one egg. RareEgg reuses a spare imported design; the unused originals remain preserved.
 
 EggLoop clones these templates, scales their height to 4 studs, and uses them for the island pickups and carried eggs. Meshes and textures are preserved; imported scripts, prompts, and joints are removed from the runtime clones. If a template is missing or invalid, its route keeps the prototype egg and prints a setup warning.
 
@@ -134,7 +138,7 @@ Equip the glider and press Space to fly, then press Shift for a burst. The boost
 | 4 | 250,000 coins | 2.4 seconds | 4.4 seconds |
 | 5 — maximum | 1,000,000 coins | 2.7 seconds | 4.2 seconds |
 
-At camp, hold E at the **Boost Workshop**, in the shared north plaza, to buy the next level. Each player sees their own next price. Purchases validate a living nearby character, camp membership, travel state and funds on the server; checking funds, deducting coins and increasing the private level do not yield. Insufficient funds and maximum level have explicit feedback. Upgrades survive character respawns within the current server, but coins and upgrades reset when the server session ends. Persistence is not implemented yet.
+At camp, hold E at the **Boost Workshop**, in the shared north plaza, to buy the next level. Each player sees their own next price. Purchases validate a living nearby character, camp membership, travel state and funds on the server; checking funds, deducting coins and increasing the private level do not yield. Insufficient funds and maximum level have explicit feedback. Coins and purchased upgrades are included in the player save. Rebirth resets coins and boost upgrades; an unassociated local Studio file uses a nonpersistent preview.
 
 Portal travel, death, unequipping, stopping flight, anchoring and a bird slap cancel an active burst. Cancellation keeps the existing cooldown, so respawning or toggling the tool cannot repeatedly reset it. Knockback suppresses boost and the glider's normal force until the slap ends. The imported glider is sandboxed; it reads server-approved character speed/deadline attributes instead of requiring our unsandboxed module. Its original server Script is backed up in `ServerStorage/ImportedAssetBackups/GliderServerBeforeBoost`.
 
@@ -148,7 +152,7 @@ Read `docs/gameplay-research.md` for research sources, design hypotheses, next p
 
 The [Flower Pillow asset](https://create.roblox.com/store/asset/15490887339/Flower-Pillow) is imported as an unchanged backup in `ServerStorage/ImportedAssetBackups/FlowerPillowSource`. A normalized, anchored, non-colliding template lives in `ServerStorage/DisplayModels/FlowerPillow`. Its six petals have `PillowTint = true`; the yellow center has it set to false, so rarity changes preserve the center.
 
-Each of the six gardens has six slots in `Workspace/CampPlots/PlotN/Slots`, along its outer edge. Each has a `Pillow`, invisible `SlotRoot` and `EggAnchor` attachment marking the displayed egg’s bottom. Pillows are seven studs wide and retain their mesh proportions. Their CanCollide, CanTouch and CanQuery properties are disabled.
+Each of the six gardens has twelve authored slots in `Workspace/CampPlots/PlotN/Slots`: six along its outer edge and six on the upper deck, unlocked by the first rebirth. Each has a `Pillow`, invisible `SlotRoot` and `EggAnchor` attachment marking the displayed egg’s bottom. Pillows are seven studs wide and retain their mesh proportions. Their CanCollide, CanTouch and CanQuery properties are disabled.
 
 `PillowColors` renders a slot's `EggRarity` attribute, or its `DisplayedEgg` child's `Rarity` attribute. It also recognizes the existing Common Egg / Uncommon Egg names. Empty is the original pink; Common is cream, Uncommon green, Rare blue, Epic purple, Legendary gold and Mythic rose. Future rarities have colors only; they are not implemented egg routes. The module handles only appearance, never currency or egg ownership.
 
@@ -194,7 +198,7 @@ Evidence: `tmp/shared-camp-playtest-results.json` and `tmp/shared-camp-preview.j
 
 ## Sky gear, stuns and mid-air stealing
 
-The public `SkyGearShop` has a 5,000-coin bat counter and 3,000-coin egg shield counter. Hold E to buy. Gear/charges stay per player and survive character respawn in this session; Slap is free. In Meadow, use **Q slap**, **R bat**, **F steal** and **G shield**, with the glider still equipped. HUD buttons use the same request path; D-pad left/up/right/down bind these actions.
+The public `SkyGearShop` has a 5,000-coin bat counter and 3,000-coin egg shield counter. Hold E to buy. Purchased gear and unused charges are saved per player and retained through rebirth; Slap is free. In Meadow and Storm Isles, use **Q slap**, **R bat**, **F steal** and **G shield**, with the glider still equipped. HUD buttons use the same request path; D-pad left/up/right/down bind these actions.
 
 Base camp and the Meadow landing are safe. Slap/bat briefly stun and shove without removing health or eggs, with recovery protection against repeat hits. F transfers the real carried egg only when both players are airborne with approved gliders, close/in front, and unobstructed. The thief needs empty hands. Identity, rolled income/tier/size and the exclusive source reservation follow the egg. The new owner gets six seconds of theft protection. G spends one charge for twelve seconds of theft protection, with a blue glow/countdown; the guardian and knockback still work.
 
@@ -202,7 +206,7 @@ Server rules, forces, cosmetic effects and input have separate combat modules. `
 
 The free slap glove is held upright by its handle in the left hand, while the glider keeps the right-hand Tool grip. Q selects the glove and slaps; R selects the purchased bat and swings. Only one weapon is held at a time, and it remains visible after the swing. `combat/HeldWeapon.lua` owns the replicated prop and respawn cleanup; `combat_client/WeaponPose.lua` evaluates each viewer's arm pose from server-approved timestamps. Both weapons have windup, contact, follow-through and recovery. The glove uses the art from [Slap Glove Tool](https://create.roblox.com/store/asset/120133129723048/Slap-Glove-Tool), with its imported R6 scripts, remotes, animations, sounds and hitboxes removed. The prior hand template is archived in ServerStorage. Save the Studio place to retain the new native template. See `docs/bat-presentation.md` for the held-weapon implementation and verification.
 
-Research, coin-spending ideas, prices and controls are in `docs/economy-and-air-pvp.md`. An actual two-client native-input test passed purchases, safe-base rejection, slap/bat stuns and cleanup, shield protection, grounded-theft rejection, airborne Rare transfer, take-back protection, former-owner respawn and new-owner display income. A High Rare retained 832/sec, tier, scale and identity. Final single-client checks verified the glow/countdown and charge consumption. Evidence: `tmp/sky-combat-playtest-results.json`. Six-player stress, slow networks, complete phone/controller flight and final balance remain unverified. Saving is still future work.
+Research, coin-spending ideas, prices and controls are in `docs/economy-and-air-pvp.md`. An actual two-client native-input test passed purchases, safe-base rejection, slap/bat stuns and cleanup, shield protection, grounded-theft rejection, airborne Rare transfer, take-back protection, former-owner respawn and new-owner display income. A High Rare retained 832/sec, tier, scale and identity. Final single-client checks verified the glow/countdown and charge consumption. Evidence: `tmp/sky-combat-playtest-results.json`. Six-player stress, slow networks, complete phone/controller flight and final balance remain unverified. See `docs/saving-and-first-rebirth.md` for current persistence checks and the remaining published rejoin test.
 
 ## Camp perimeter walls
 
@@ -223,6 +227,6 @@ The VS Code Rojo and Luau language-server extensions and the Studio Rojo plugin 
 
 `backups/GlideAndGrab_before_Rojo_2026-10-13.rbxl` is an exact copy of the saved place before migration.
 The `backups` and `tmp` folders are excluded from Git.
-This setup does not add player-progress saving; test coins still reset between server sessions.
+The native place backup and player-progress saves are separate. Local unassociated Studio previews reset when Play stops; published games use the player save system described above.
 
 References: [Rojo workflows](https://rojo.space/docs/v7/workflows/), [project format](https://rojo.space/docs/v7/project-format/).

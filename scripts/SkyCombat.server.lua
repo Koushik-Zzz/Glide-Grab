@@ -6,6 +6,7 @@ local Profiles = require(script.Parent:WaitForChild("DataModules"):WaitForChild(
 local modules = script.Parent:WaitForChild("CombatModules")
 local Config, Rules, Impact = require(modules.Config), require(modules.Rules), require(modules.Impact)
 local HeldWeapon = require(modules:WaitForChild("HeldWeapon"))
+local Telemetry = require(script.Parent:WaitForChild("ProgressionModules"):WaitForChild("EconomyTelemetry"))
 local eggLoop = script.Parent:WaitForChild("EggLoop")
 local steal = eggLoop:WaitForChild("TryAirSteal")
 local hasCargo = eggLoop:WaitForChild("HasCargo")
@@ -165,12 +166,14 @@ local function purchase(p, kind, prompt)
 	if kind == "Bat" then
 		state.Bat = true
 		Profiles.get(p).Bat = true
+		Telemetry.purchase(p, price, coins.Value, "BatUnlock")
 		p:SetAttribute("OwnsBat", true)
 		state.Presentation:equip("Bat")
 		notice(p, "Bat purchased! R to swing; your glider stays equipped.")
 	else
 		state.Charges += 1
 		Profiles.get(p).Shields = state.Charges
+		Telemetry.purchase(p, price, coins.Value, "EggShieldCharge")
 		p:SetAttribute("EggShieldCharges", state.Charges)
 		notice(p, "Shield charge purchased! G while carrying an egg in Meadow.")
 	end

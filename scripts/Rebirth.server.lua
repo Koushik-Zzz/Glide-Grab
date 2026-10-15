@@ -5,6 +5,7 @@ local HttpService = game:GetService("HttpService")
 local Profiles = require(script.Parent:WaitForChild("DataModules"):WaitForChild("Profiles"))
 local Schema = require(script.Parent.DataModules.Schema)
 local Config = require(script.Parent.ProgressionModules.RebirthConfig)
+local Telemetry = require(script.Parent.ProgressionModules.EconomyTelemetry)
 local Collection = require(script.Parent.CollectionModules.Controller)
 local hasCargo = script.Parent:WaitForChild("EggLoop"):WaitForChild("HasCargo")
 local station = workspace:WaitForChild("RebirthStation"):WaitForChild("Counter")
@@ -54,20 +55,25 @@ remote.OnServerEvent:Connect(function(player, ...)
 	end
 	busy[player] = true
 	local proposed = Schema.copy(data)
+	local coinsRemoved = data.Coins
 	proposed.Rebirths += 1
 	proposed.Coins, proposed.Pending, proposed.BoostLevel, proposed.Eggs = 0, 0, 0, {}
 	if not Config.KeepGear then
 		proposed.Bat, proposed.Shields = false, 0
 	end
 	remote:FireClient(player, "Saving")
-	local ok = Profiles.commit(player, proposed, function(saved)
+	local ok, reason = Profiles.commit(player, proposed, function(saved)
 		Collection.rebirth(player, saved)
 		player:SetAttribute("Rebirths", saved.Rebirths)
 	end)
+	if ok then
+		Telemetry.rebirth(player, coinsRemoved, 0)
+	end
 	busy[player] = nil
 	if player.Parent == Players then
 		remote:FireClient(player, "Notice", ok and "Rebirth complete! Storm Isles unlocked. Your camp now has 12 pillows."
-			or "Could not save the rebirth. Your progress was kept. Please try again.")
+			or (reason == "rejoin" and "Rejoin to load the saved rebirth outcome."
+				or "Could not start the rebirth. Please try again."))
 	end
 end)
 Players.PlayerRemoving:Connect(function(player)

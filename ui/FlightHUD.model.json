@@ -1,0 +1,1874 @@
+{
+  "ClassName": "ScreenGui",
+  "Properties": {
+    "ResetOnSpawn": false,
+    "ScreenInsets": "CoreUISafeInsets",
+    "DisplayOrder": 10,
+    "ZIndexBehavior": "Sibling"
+  },
+  "Children": [
+    {
+      "Name": "SafeScreen",
+      "ClassName": "Frame",
+      "Properties": {
+        "Size": {
+          "UDim2": [
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        },
+        "BackgroundTransparency": 1
+      },
+      "Children": [
+        {
+          "Name": "Coins",
+          "ClassName": "Frame",
+          "Properties": {
+            "Position": {
+              "UDim2": [
+                [
+                  0,
+                  18
+                ],
+                [
+                  0,
+                  14
+                ]
+              ]
+            },
+            "Size": {
+              "UDim2": [
+                [
+                  0,
+                  230
+                ],
+                [
+                  0,
+                  86
+                ]
+              ]
+            },
+            "BackgroundColor3": {
+              "Color3": [
+                0.08,
+                0.24,
+                0.3
+              ]
+            },
+            "BorderSizePixel": 0,
+            "ZIndex": 1
+          },
+          "Children": [
+            {
+              "Name": "Corner",
+              "ClassName": "UICorner",
+              "Properties": {
+                "CornerRadius": {
+                  "UDim": [
+                    0,
+                    6
+                  ]
+                }
+              },
+              "Children": []
+            },
+            {
+              "Name": "Outline",
+              "ClassName": "UIStroke",
+              "Properties": {
+                "Thickness": 3,
+                "Color": {
+                  "Color3": [
+                    0.050980392156862744,
+                    0.09411764705882353,
+                    0.16470588235294117
+                  ]
+                },
+                "ApplyStrokeMode": "Border"
+              },
+              "Children": []
+            },
+            {
+              "Name": "Studs",
+              "ClassName": "ImageLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      3
+                    ],
+                    [
+                      0,
+                      3
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -6
+                    ],
+                    [
+                      1,
+                      -6
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "Image": "rbxassetid://18878365966",
+                "ImageTransparency": 0.84,
+                "ScaleType": "Tile",
+                "TileSize": {
+                  "UDim2": [
+                    [
+                      0,
+                      48
+                    ],
+                    [
+                      0,
+                      48
+                    ]
+                  ]
+                },
+                "ZIndex": 2
+              },
+              "Children": [
+                {
+                  "Name": "Corner",
+                  "ClassName": "UICorner",
+                  "Properties": {
+                    "CornerRadius": {
+                      "UDim": [
+                        0,
+                        4
+                      ]
+                    }
+                  },
+                  "Children": []
+                }
+              ]
+            },
+            {
+              "Name": "TopHighlight",
+              "ClassName": "Frame",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      4
+                    ],
+                    [
+                      0,
+                      3
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -8
+                    ],
+                    [
+                      0,
+                      2
+                    ]
+                  ]
+                },
+                "BackgroundColor3": {
+                  "Color3": [
+                    1,
+                    1,
+                    1
+                  ]
+                },
+                "BackgroundTransparency": 0.45,
+                "BorderSizePixel": 0,
+                "ZIndex": 3
+              },
+              "Children": []
+            },
+            {
+              "Name": "BottomBevel",
+              "ClassName": "Frame",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      4
+                    ],
+                    [
+                      1,
+                      -6
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -8
+                    ],
+                    [
+                      0,
+                      3
+                    ]
+                  ]
+                },
+                "BackgroundColor3": {
+                  "Color3": [
+                    0.050980392156862744,
+                    0.09411764705882353,
+                    0.16470588235294117
+                  ]
+                },
+                "BackgroundTransparency": 0.55,
+                "BorderSizePixel": 0,
+                "ZIndex": 3
+              },
+              "Children": []
+            },
+            {
+              "Name": "FeedbackScale",
+              "ClassName": "UIScale",
+              "Properties": {
+                "Scale": 1
+              },
+              "Children": []
+            },
+            {
+              "Name": "Caption",
+              "ClassName": "TextLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      14
+                    ],
+                    [
+                      0,
+                      6
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -28
+                    ],
+                    [
+                      0,
+                      16
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "BorderSizePixel": 0,
+                "Font": "FredokaOne",
+                "Text": "COINS",
+                "TextColor3": {
+                  "Color3": [
+                    0.8,
+                    0.95,
+                    1
+                  ]
+                },
+                "TextSize": 11,
+                "TextScaled": true,
+                "TextXAlignment": "Left",
+                "ZIndex": 5
+              },
+              "Children": [
+                {
+                  "Name": "TextLimit",
+                  "ClassName": "UITextSizeConstraint",
+                  "Properties": {
+                    "MinTextSize": 10,
+                    "MaxTextSize": 11
+                  },
+                  "Children": []
+                },
+                {
+                  "Name": "Outline",
+                  "ClassName": "UIStroke",
+                  "Properties": {
+                    "Thickness": 1.4,
+                    "Color": {
+                      "Color3": [
+                        0.050980392156862744,
+                        0.09411764705882353,
+                        0.16470588235294117
+                      ]
+                    },
+                    "ApplyStrokeMode": "Contextual"
+                  },
+                  "Children": []
+                }
+              ]
+            },
+            {
+              "Name": "Amount",
+              "ClassName": "TextLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      12
+                    ],
+                    [
+                      0,
+                      22
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -24
+                    ],
+                    [
+                      0,
+                      36
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "BorderSizePixel": 0,
+                "Font": "FredokaOne",
+                "Text": "$0",
+                "TextColor3": {
+                  "Color3": [
+                    0.49411764705882355,
+                    1,
+                    0.16470588235294117
+                  ]
+                },
+                "TextSize": 34,
+                "TextScaled": true,
+                "TextXAlignment": "Left",
+                "ZIndex": 5
+              },
+              "Children": [
+                {
+                  "Name": "TextLimit",
+                  "ClassName": "UITextSizeConstraint",
+                  "Properties": {
+                    "MinTextSize": 10,
+                    "MaxTextSize": 34
+                  },
+                  "Children": []
+                },
+                {
+                  "Name": "Outline",
+                  "ClassName": "UIStroke",
+                  "Properties": {
+                    "Thickness": 1.4,
+                    "Color": {
+                      "Color3": [
+                        0.050980392156862744,
+                        0.09411764705882353,
+                        0.16470588235294117
+                      ]
+                    },
+                    "ApplyStrokeMode": "Contextual"
+                  },
+                  "Children": []
+                }
+              ]
+            },
+            {
+              "Name": "Income",
+              "ClassName": "TextLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      14
+                    ],
+                    [
+                      1,
+                      -24
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -28
+                    ],
+                    [
+                      0,
+                      18
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "BorderSizePixel": 0,
+                "Font": "FredokaOne",
+                "Text": "+0/sec   |   Ready: 0",
+                "TextColor3": {
+                  "Color3": [
+                    1,
+                    1,
+                    1
+                  ]
+                },
+                "TextSize": 12,
+                "TextScaled": true,
+                "TextXAlignment": "Left",
+                "ZIndex": 5
+              },
+              "Children": [
+                {
+                  "Name": "TextLimit",
+                  "ClassName": "UITextSizeConstraint",
+                  "Properties": {
+                    "MinTextSize": 10,
+                    "MaxTextSize": 12
+                  },
+                  "Children": []
+                },
+                {
+                  "Name": "Outline",
+                  "ClassName": "UIStroke",
+                  "Properties": {
+                    "Thickness": 1.4,
+                    "Color": {
+                      "Color3": [
+                        0.050980392156862744,
+                        0.09411764705882353,
+                        0.16470588235294117
+                      ]
+                    },
+                    "ApplyStrokeMode": "Contextual"
+                  },
+                  "Children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Objective",
+          "ClassName": "Frame",
+          "Properties": {
+            "Position": {
+              "UDim2": [
+                [
+                  0,
+                  400
+                ],
+                [
+                  0,
+                  14
+                ]
+              ]
+            },
+            "Size": {
+              "UDim2": [
+                [
+                  0,
+                  372
+                ],
+                [
+                  0,
+                  64
+                ]
+              ]
+            },
+            "BackgroundColor3": {
+              "Color3": [
+                0.1607843137254902,
+                0.7803921568627451,
+                1
+              ]
+            },
+            "BorderSizePixel": 0,
+            "ZIndex": 1
+          },
+          "Children": [
+            {
+              "Name": "Corner",
+              "ClassName": "UICorner",
+              "Properties": {
+                "CornerRadius": {
+                  "UDim": [
+                    0,
+                    6
+                  ]
+                }
+              },
+              "Children": []
+            },
+            {
+              "Name": "Outline",
+              "ClassName": "UIStroke",
+              "Properties": {
+                "Thickness": 3,
+                "Color": {
+                  "Color3": [
+                    0.050980392156862744,
+                    0.09411764705882353,
+                    0.16470588235294117
+                  ]
+                },
+                "ApplyStrokeMode": "Border"
+              },
+              "Children": []
+            },
+            {
+              "Name": "Studs",
+              "ClassName": "ImageLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      3
+                    ],
+                    [
+                      0,
+                      3
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -6
+                    ],
+                    [
+                      1,
+                      -6
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "Image": "rbxassetid://18878365966",
+                "ImageTransparency": 0.84,
+                "ScaleType": "Tile",
+                "TileSize": {
+                  "UDim2": [
+                    [
+                      0,
+                      48
+                    ],
+                    [
+                      0,
+                      48
+                    ]
+                  ]
+                },
+                "ZIndex": 2
+              },
+              "Children": [
+                {
+                  "Name": "Corner",
+                  "ClassName": "UICorner",
+                  "Properties": {
+                    "CornerRadius": {
+                      "UDim": [
+                        0,
+                        4
+                      ]
+                    }
+                  },
+                  "Children": []
+                }
+              ]
+            },
+            {
+              "Name": "TopHighlight",
+              "ClassName": "Frame",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      4
+                    ],
+                    [
+                      0,
+                      3
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -8
+                    ],
+                    [
+                      0,
+                      2
+                    ]
+                  ]
+                },
+                "BackgroundColor3": {
+                  "Color3": [
+                    1,
+                    1,
+                    1
+                  ]
+                },
+                "BackgroundTransparency": 0.45,
+                "BorderSizePixel": 0,
+                "ZIndex": 3
+              },
+              "Children": []
+            },
+            {
+              "Name": "BottomBevel",
+              "ClassName": "Frame",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      4
+                    ],
+                    [
+                      1,
+                      -6
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -8
+                    ],
+                    [
+                      0,
+                      3
+                    ]
+                  ]
+                },
+                "BackgroundColor3": {
+                  "Color3": [
+                    0.050980392156862744,
+                    0.09411764705882353,
+                    0.16470588235294117
+                  ]
+                },
+                "BackgroundTransparency": 0.55,
+                "BorderSizePixel": 0,
+                "ZIndex": 3
+              },
+              "Children": []
+            },
+            {
+              "Name": "Direction",
+              "ClassName": "TextLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      10
+                    ],
+                    [
+                      0,
+                      9
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      0,
+                      32
+                    ],
+                    [
+                      0,
+                      40
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "BorderSizePixel": 0,
+                "Font": "FredokaOne",
+                "Text": ">",
+                "TextColor3": {
+                  "Color3": [
+                    1,
+                    0.8117647058823529,
+                    0.19215686274509805
+                  ]
+                },
+                "TextSize": 30,
+                "TextScaled": true,
+                "TextXAlignment": "Center",
+                "ZIndex": 5
+              },
+              "Children": [
+                {
+                  "Name": "TextLimit",
+                  "ClassName": "UITextSizeConstraint",
+                  "Properties": {
+                    "MinTextSize": 10,
+                    "MaxTextSize": 30
+                  },
+                  "Children": []
+                },
+                {
+                  "Name": "Outline",
+                  "ClassName": "UIStroke",
+                  "Properties": {
+                    "Thickness": 1.4,
+                    "Color": {
+                      "Color3": [
+                        0.050980392156862744,
+                        0.09411764705882353,
+                        0.16470588235294117
+                      ]
+                    },
+                    "ApplyStrokeMode": "Contextual"
+                  },
+                  "Children": []
+                }
+              ]
+            },
+            {
+              "Name": "Title",
+              "ClassName": "TextLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      52
+                    ],
+                    [
+                      0,
+                      8
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -66
+                    ],
+                    [
+                      0,
+                      24
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "BorderSizePixel": 0,
+                "Font": "FredokaOne",
+                "Text": "Explore Meadow",
+                "TextColor3": {
+                  "Color3": [
+                    1,
+                    1,
+                    1
+                  ]
+                },
+                "TextSize": 20,
+                "TextScaled": true,
+                "TextXAlignment": "Left",
+                "ZIndex": 5
+              },
+              "Children": [
+                {
+                  "Name": "TextLimit",
+                  "ClassName": "UITextSizeConstraint",
+                  "Properties": {
+                    "MinTextSize": 10,
+                    "MaxTextSize": 20
+                  },
+                  "Children": []
+                },
+                {
+                  "Name": "Outline",
+                  "ClassName": "UIStroke",
+                  "Properties": {
+                    "Thickness": 1.4,
+                    "Color": {
+                      "Color3": [
+                        0.050980392156862744,
+                        0.09411764705882353,
+                        0.16470588235294117
+                      ]
+                    },
+                    "ApplyStrokeMode": "Contextual"
+                  },
+                  "Children": []
+                }
+              ]
+            },
+            {
+              "Name": "Hint",
+              "ClassName": "TextLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      52
+                    ],
+                    [
+                      0,
+                      35
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -66
+                    ],
+                    [
+                      0,
+                      17
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "BorderSizePixel": 0,
+                "Font": "FredokaOne",
+                "Text": "Use a camp portal to explore",
+                "TextColor3": {
+                  "Color3": [
+                    1,
+                    1,
+                    1
+                  ]
+                },
+                "TextSize": 12,
+                "TextScaled": true,
+                "TextXAlignment": "Left",
+                "ZIndex": 5
+              },
+              "Children": [
+                {
+                  "Name": "TextLimit",
+                  "ClassName": "UITextSizeConstraint",
+                  "Properties": {
+                    "MinTextSize": 10,
+                    "MaxTextSize": 12
+                  },
+                  "Children": []
+                },
+                {
+                  "Name": "Outline",
+                  "ClassName": "UIStroke",
+                  "Properties": {
+                    "Thickness": 1.4,
+                    "Color": {
+                      "Color3": [
+                        0.050980392156862744,
+                        0.09411764705882353,
+                        0.16470588235294117
+                      ]
+                    },
+                    "ApplyStrokeMode": "Contextual"
+                  },
+                  "Children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Cargo",
+          "ClassName": "Frame",
+          "Properties": {
+            "Position": {
+              "UDim2": [
+                [
+                  0,
+                  400
+                ],
+                [
+                  0,
+                  500
+                ]
+              ]
+            },
+            "Size": {
+              "UDim2": [
+                [
+                  0,
+                  320
+                ],
+                [
+                  0,
+                  60
+                ]
+              ]
+            },
+            "BackgroundColor3": {
+              "Color3": [
+                1,
+                0.8117647058823529,
+                0.19215686274509805
+              ]
+            },
+            "BorderSizePixel": 0,
+            "ZIndex": 1,
+            "Visible": false
+          },
+          "Children": [
+            {
+              "Name": "Corner",
+              "ClassName": "UICorner",
+              "Properties": {
+                "CornerRadius": {
+                  "UDim": [
+                    0,
+                    6
+                  ]
+                }
+              },
+              "Children": []
+            },
+            {
+              "Name": "Outline",
+              "ClassName": "UIStroke",
+              "Properties": {
+                "Thickness": 3,
+                "Color": {
+                  "Color3": [
+                    0.050980392156862744,
+                    0.09411764705882353,
+                    0.16470588235294117
+                  ]
+                },
+                "ApplyStrokeMode": "Border"
+              },
+              "Children": []
+            },
+            {
+              "Name": "Studs",
+              "ClassName": "ImageLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      3
+                    ],
+                    [
+                      0,
+                      3
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -6
+                    ],
+                    [
+                      1,
+                      -6
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "Image": "rbxassetid://18878365966",
+                "ImageTransparency": 0.84,
+                "ScaleType": "Tile",
+                "TileSize": {
+                  "UDim2": [
+                    [
+                      0,
+                      48
+                    ],
+                    [
+                      0,
+                      48
+                    ]
+                  ]
+                },
+                "ZIndex": 2
+              },
+              "Children": [
+                {
+                  "Name": "Corner",
+                  "ClassName": "UICorner",
+                  "Properties": {
+                    "CornerRadius": {
+                      "UDim": [
+                        0,
+                        4
+                      ]
+                    }
+                  },
+                  "Children": []
+                }
+              ]
+            },
+            {
+              "Name": "TopHighlight",
+              "ClassName": "Frame",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      4
+                    ],
+                    [
+                      0,
+                      3
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -8
+                    ],
+                    [
+                      0,
+                      2
+                    ]
+                  ]
+                },
+                "BackgroundColor3": {
+                  "Color3": [
+                    1,
+                    1,
+                    1
+                  ]
+                },
+                "BackgroundTransparency": 0.45,
+                "BorderSizePixel": 0,
+                "ZIndex": 3
+              },
+              "Children": []
+            },
+            {
+              "Name": "BottomBevel",
+              "ClassName": "Frame",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      4
+                    ],
+                    [
+                      1,
+                      -6
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -8
+                    ],
+                    [
+                      0,
+                      3
+                    ]
+                  ]
+                },
+                "BackgroundColor3": {
+                  "Color3": [
+                    0.050980392156862744,
+                    0.09411764705882353,
+                    0.16470588235294117
+                  ]
+                },
+                "BackgroundTransparency": 0.55,
+                "BorderSizePixel": 0,
+                "ZIndex": 3
+              },
+              "Children": []
+            },
+            {
+              "Name": "FeedbackScale",
+              "ClassName": "UIScale",
+              "Properties": {
+                "Scale": 1
+              },
+              "Children": []
+            },
+            {
+              "Name": "EggIcon",
+              "ClassName": "Frame",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      16
+                    ],
+                    [
+                      0,
+                      10
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      0,
+                      26
+                    ],
+                    [
+                      0,
+                      35
+                    ]
+                  ]
+                },
+                "BackgroundColor3": {
+                  "Color3": [
+                    1,
+                    0.98,
+                    0.88
+                  ]
+                },
+                "BorderSizePixel": 0,
+                "Rotation": -8,
+                "ZIndex": 5
+              },
+              "Children": [
+                {
+                  "Name": "EggCurve",
+                  "ClassName": "UICorner",
+                  "Properties": {
+                    "CornerRadius": {
+                      "UDim": [
+                        1,
+                        0
+                      ]
+                    }
+                  }
+                },
+                {
+                  "Name": "EggOutline",
+                  "ClassName": "UIStroke",
+                  "Properties": {
+                    "Color": {
+                      "Color3": [
+                        0.050980392156862744,
+                        0.09411764705882353,
+                        0.16470588235294117
+                      ]
+                    },
+                    "Thickness": 2
+                  }
+                },
+                {
+                  "Name": "Spot1",
+                  "ClassName": "Frame",
+                  "Properties": {
+                    "Position": {
+                      "UDim2": [
+                        [
+                          0,
+                          5
+                        ],
+                        [
+                          0,
+                          10
+                        ]
+                      ]
+                    },
+                    "Size": {
+                      "UDim2": [
+                        [
+                          0,
+                          7
+                        ],
+                        [
+                          0,
+                          8
+                        ]
+                      ]
+                    },
+                    "BackgroundColor3": {
+                      "Color3": [
+                        1,
+                        0.8117647058823529,
+                        0.19215686274509805
+                      ]
+                    },
+                    "BorderSizePixel": 0,
+                    "ZIndex": 6
+                  },
+                  "Children": [
+                    {
+                      "Name": "RoundSpot",
+                      "ClassName": "UICorner",
+                      "Properties": {
+                        "CornerRadius": {
+                          "UDim": [
+                            1,
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "Name": "Spot2",
+                  "ClassName": "Frame",
+                  "Properties": {
+                    "Position": {
+                      "UDim2": [
+                        [
+                          0,
+                          16
+                        ],
+                        [
+                          0,
+                          21
+                        ]
+                      ]
+                    },
+                    "Size": {
+                      "UDim2": [
+                        [
+                          0,
+                          6
+                        ],
+                        [
+                          0,
+                          6
+                        ]
+                      ]
+                    },
+                    "BackgroundColor3": {
+                      "Color3": [
+                        1,
+                        0.8117647058823529,
+                        0.19215686274509805
+                      ]
+                    },
+                    "BorderSizePixel": 0,
+                    "ZIndex": 6
+                  },
+                  "Children": [
+                    {
+                      "Name": "RoundSpot",
+                      "ClassName": "UICorner",
+                      "Properties": {
+                        "CornerRadius": {
+                          "UDim": [
+                            1,
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "EggName",
+              "ClassName": "TextLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      56
+                    ],
+                    [
+                      0,
+                      7
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -68
+                    ],
+                    [
+                      0,
+                      24
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "BorderSizePixel": 0,
+                "Font": "FredokaOne",
+                "Text": "Common Egg",
+                "TextColor3": {
+                  "Color3": [
+                    1,
+                    1,
+                    1
+                  ]
+                },
+                "TextSize": 18,
+                "TextScaled": true,
+                "TextXAlignment": "Left",
+                "ZIndex": 5
+              },
+              "Children": [
+                {
+                  "Name": "TextLimit",
+                  "ClassName": "UITextSizeConstraint",
+                  "Properties": {
+                    "MinTextSize": 10,
+                    "MaxTextSize": 18
+                  },
+                  "Children": []
+                },
+                {
+                  "Name": "Outline",
+                  "ClassName": "UIStroke",
+                  "Properties": {
+                    "Thickness": 1.4,
+                    "Color": {
+                      "Color3": [
+                        0.050980392156862744,
+                        0.09411764705882353,
+                        0.16470588235294117
+                      ]
+                    },
+                    "ApplyStrokeMode": "Contextual"
+                  },
+                  "Children": []
+                }
+              ]
+            },
+            {
+              "Name": "Value",
+              "ClassName": "TextLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      56
+                    ],
+                    [
+                      0,
+                      32
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -68
+                    ],
+                    [
+                      0,
+                      17
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "BorderSizePixel": 0,
+                "Font": "FredokaOne",
+                "Text": "+1/sec when placed",
+                "TextColor3": {
+                  "Color3": [
+                    1,
+                    1,
+                    1
+                  ]
+                },
+                "TextSize": 12,
+                "TextScaled": true,
+                "TextXAlignment": "Left",
+                "ZIndex": 5
+              },
+              "Children": [
+                {
+                  "Name": "TextLimit",
+                  "ClassName": "UITextSizeConstraint",
+                  "Properties": {
+                    "MinTextSize": 10,
+                    "MaxTextSize": 12
+                  },
+                  "Children": []
+                },
+                {
+                  "Name": "Outline",
+                  "ClassName": "UIStroke",
+                  "Properties": {
+                    "Thickness": 1.4,
+                    "Color": {
+                      "Color3": [
+                        0.050980392156862744,
+                        0.09411764705882353,
+                        0.16470588235294117
+                      ]
+                    },
+                    "ApplyStrokeMode": "Contextual"
+                  },
+                  "Children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "WindWarning",
+          "ClassName": "Frame",
+          "Properties": {
+            "Position": {
+              "UDim2": [
+                [
+                  0,
+                  400
+                ],
+                [
+                  0,
+                  90
+                ]
+              ]
+            },
+            "Size": {
+              "UDim2": [
+                [
+                  0,
+                  372
+                ],
+                [
+                  0,
+                  42
+                ]
+              ]
+            },
+            "BackgroundColor3": {
+              "Color3": [
+                0.07,
+                0.16,
+                0.23
+              ]
+            },
+            "BorderSizePixel": 0,
+            "ZIndex": 1,
+            "Visible": false
+          },
+          "Children": [
+            {
+              "Name": "Corner",
+              "ClassName": "UICorner",
+              "Properties": {
+                "CornerRadius": {
+                  "UDim": [
+                    0,
+                    6
+                  ]
+                }
+              },
+              "Children": []
+            },
+            {
+              "Name": "Outline",
+              "ClassName": "UIStroke",
+              "Properties": {
+                "Thickness": 3,
+                "Color": {
+                  "Color3": [
+                    0.050980392156862744,
+                    0.09411764705882353,
+                    0.16470588235294117
+                  ]
+                },
+                "ApplyStrokeMode": "Border"
+              },
+              "Children": []
+            },
+            {
+              "Name": "Studs",
+              "ClassName": "ImageLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      3
+                    ],
+                    [
+                      0,
+                      3
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -6
+                    ],
+                    [
+                      1,
+                      -6
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "Image": "rbxassetid://18878365966",
+                "ImageTransparency": 0.84,
+                "ScaleType": "Tile",
+                "TileSize": {
+                  "UDim2": [
+                    [
+                      0,
+                      48
+                    ],
+                    [
+                      0,
+                      48
+                    ]
+                  ]
+                },
+                "ZIndex": 2
+              },
+              "Children": [
+                {
+                  "Name": "Corner",
+                  "ClassName": "UICorner",
+                  "Properties": {
+                    "CornerRadius": {
+                      "UDim": [
+                        0,
+                        4
+                      ]
+                    }
+                  },
+                  "Children": []
+                }
+              ]
+            },
+            {
+              "Name": "TopHighlight",
+              "ClassName": "Frame",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      4
+                    ],
+                    [
+                      0,
+                      3
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -8
+                    ],
+                    [
+                      0,
+                      2
+                    ]
+                  ]
+                },
+                "BackgroundColor3": {
+                  "Color3": [
+                    1,
+                    1,
+                    1
+                  ]
+                },
+                "BackgroundTransparency": 0.45,
+                "BorderSizePixel": 0,
+                "ZIndex": 3
+              },
+              "Children": []
+            },
+            {
+              "Name": "BottomBevel",
+              "ClassName": "Frame",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      4
+                    ],
+                    [
+                      1,
+                      -6
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -8
+                    ],
+                    [
+                      0,
+                      3
+                    ]
+                  ]
+                },
+                "BackgroundColor3": {
+                  "Color3": [
+                    0.050980392156862744,
+                    0.09411764705882353,
+                    0.16470588235294117
+                  ]
+                },
+                "BackgroundTransparency": 0.55,
+                "BorderSizePixel": 0,
+                "ZIndex": 3
+              },
+              "Children": []
+            },
+            {
+              "Name": "Status",
+              "ClassName": "TextLabel",
+              "Properties": {
+                "Position": {
+                  "UDim2": [
+                    [
+                      0,
+                      12
+                    ],
+                    [
+                      0,
+                      5
+                    ]
+                  ]
+                },
+                "Size": {
+                  "UDim2": [
+                    [
+                      1,
+                      -24
+                    ],
+                    [
+                      1,
+                      -10
+                    ]
+                  ]
+                },
+                "BackgroundTransparency": 1,
+                "BorderSizePixel": 0,
+                "Font": "FredokaOne",
+                "Text": "",
+                "TextColor3": {
+                  "Color3": [
+                    1,
+                    1,
+                    1
+                  ]
+                },
+                "TextSize": 14,
+                "TextScaled": true,
+                "TextXAlignment": "Center",
+                "ZIndex": 5
+              },
+              "Children": [
+                {
+                  "Name": "TextLimit",
+                  "ClassName": "UITextSizeConstraint",
+                  "Properties": {
+                    "MinTextSize": 10,
+                    "MaxTextSize": 14
+                  },
+                  "Children": []
+                },
+                {
+                  "Name": "Outline",
+                  "ClassName": "UIStroke",
+                  "Properties": {
+                    "Thickness": 1.4,
+                    "Color": {
+                      "Color3": [
+                        0.050980392156862744,
+                        0.09411764705882353,
+                        0.16470588235294117
+                      ]
+                    },
+                    "ApplyStrokeMode": "Contextual"
+                  },
+                  "Children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "PickupNotice",
+          "ClassName": "TextLabel",
+          "Properties": {
+            "Position": {
+              "UDim2": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0
+                ]
+              ]
+            },
+            "Size": {
+              "UDim2": [
+                [
+                  0,
+                  320
+                ],
+                [
+                  0,
+                  32
+                ]
+              ]
+            },
+            "BackgroundTransparency": 1,
+            "BorderSizePixel": 0,
+            "Font": "FredokaOne",
+            "Text": "",
+            "TextColor3": {
+              "Color3": [
+                1,
+                0.8117647058823529,
+                0.19215686274509805
+              ]
+            },
+            "TextSize": 22,
+            "TextScaled": true,
+            "TextXAlignment": "Center",
+            "ZIndex": 5,
+            "Visible": false
+          },
+          "Children": [
+            {
+              "Name": "TextLimit",
+              "ClassName": "UITextSizeConstraint",
+              "Properties": {
+                "MinTextSize": 10,
+                "MaxTextSize": 22
+              },
+              "Children": []
+            },
+            {
+              "Name": "Outline",
+              "ClassName": "UIStroke",
+              "Properties": {
+                "Thickness": 1.4,
+                "Color": {
+                  "Color3": [
+                    0.050980392156862744,
+                    0.09411764705882353,
+                    0.16470588235294117
+                  ]
+                },
+                "ApplyStrokeMode": "Contextual"
+              },
+              "Children": []
+            }
+          ]
+        },
+        {
+          "Name": "CoinReward",
+          "ClassName": "TextLabel",
+          "Properties": {
+            "Position": {
+              "UDim2": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0
+                ]
+              ]
+            },
+            "Size": {
+              "UDim2": [
+                [
+                  0,
+                  224
+                ],
+                [
+                  0,
+                  38
+                ]
+              ]
+            },
+            "BackgroundTransparency": 1,
+            "BorderSizePixel": 0,
+            "Font": "FredokaOne",
+            "Text": "",
+            "TextColor3": {
+              "Color3": [
+                0.49411764705882355,
+                1,
+                0.16470588235294117
+              ]
+            },
+            "TextSize": 28,
+            "TextScaled": true,
+            "TextXAlignment": "Left",
+            "ZIndex": 5,
+            "Visible": false
+          },
+          "Children": [
+            {
+              "Name": "TextLimit",
+              "ClassName": "UITextSizeConstraint",
+              "Properties": {
+                "MinTextSize": 10,
+                "MaxTextSize": 28
+              },
+              "Children": []
+            },
+            {
+              "Name": "Outline",
+              "ClassName": "UIStroke",
+              "Properties": {
+                "Thickness": 1.4,
+                "Color": {
+                  "Color3": [
+                    0.050980392156862744,
+                    0.09411764705882353,
+                    0.16470588235294117
+                  ]
+                },
+                "ApplyStrokeMode": "Contextual"
+              },
+              "Children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

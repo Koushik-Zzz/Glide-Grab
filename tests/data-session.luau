@@ -4,13 +4,23 @@ local values, calls, failBefore, failAfter = {}, 0, 0, 0
 local store = {}
 function store:UpdateAsync(key, callback)
 	calls += 1
-	if failBefore > 0 then failBefore -= 1 error("simulated unavailable backend") end
+	if failBefore > 0 then
+		failBefore -= 1
+		error("simulated unavailable backend")
+	end
 	local result = callback(Schema.copy(values[key]))
-	if result ~= nil then values[key] = Schema.copy(result) end
-	if failAfter > 0 then failAfter -= 1 error("simulated lost success response") end
+	if result ~= nil then
+		values[key] = Schema.copy(result)
+	end
+	if failAfter > 0 then
+		failAfter -= 1
+		error("simulated lost success response")
+	end
 	return Schema.copy(values[key])
 end
-local options = {clock = function() return now end, pause = function() end, lease = 240}
+local options = {clock = function()
+	return now
+end, pause = function() end, lease = 240}
 local checks = 0
 local function check(value, message)
 	assert(value, message)
@@ -22,7 +32,9 @@ check(first.Data.Coins == 0 and #first.Data.Eggs == 0, "new player defaults")
 local competing = Session.open(store, "Player_123", "B", options)
 check(competing == nil and values.Player_123.Session.Token == "A", "active session cannot be stolen")
 local random = {NextNumber = function(_, _, maximum) return maximum - 0.001 end,
-	NextInteger = function(_, _, maximum) return maximum end}
+	NextInteger = function(_, _, maximum)
+		return maximum
+	end}
 first.Data.Coins, first.Data.BoostLevel, first.Data.Bat, first.Data.Shields = 182321, 3, true, 2
 first.Data.Eggs = {{Slot = 6, Template = "RareEgg", Economy = Rolls.create("RareEgg", random)}}
 first.Data.Pending = 123.75
@@ -69,4 +81,51 @@ check(Session.open(store, "Future", "F", options) == nil and values.Future.Data.
 local before = calls
 failBefore = 5
 check(Session.open(store, "Unavailable", "G", options) == nil and values.Unavailable == nil and calls == before + 5, "failed load never creates defaults")
+
+-- Exhaust every response after a rebirth reached the backend. Fail closed rather
+-- than resume the old live snapshot and undo the checkpoint on the next autosave.
+local ambiguous = assert(Session.open(store, "AmbiguousRebirth", "H", options))
+ambiguous.Data.Coins = 300000
+check(ambiguous:save(ambiguous.Data, false), "seed pre-rebirth snapshot")
+local proposed = Schema.copy(ambiguous.Data)
+proposed.Coins, proposed.Rebirths = 0, 1
+failAfter = 3
+check(not ambiguous:save(proposed, false) and values.AmbiguousRebirth.Data.Rebirths == 1,
+	"exhausted responses can hide a committed rebirth")
+failAfter = 1
+check(ambiguous:releaseCurrent() and values.AmbiguousRebirth.Session == nil,
+	"lease-only release is idempotent after a lost response")
+check(values.AmbiguousRebirth.Data.Rebirths == 1 and values.AmbiguousRebirth.Data.Coins == 0,
+	"uncertain checkpoint release preserves backend outcome")
+check(not ambiguous:save(ambiguous.Data, true), "retired handle cannot overwrite checkpoint with stale data")
+local confirmed = assert(Session.open(store, "AmbiguousRebirth", "I", options))
+check(confirmed.Data.Rebirths == 1 and confirmed.Data.Coins == 0,
+	"successor loads confirmed backend rebirth")
+
+local unavailable = assert(Session.open(store, "UnwrittenRebirth", "J", options))
+unavailable.Data.Coins = 310000
+check(unavailable:save(unavailable.Data, false), "seed uncommitted checkpoint case")
+proposed = Schema.copy(unavailable.Data)
+proposed.Coins, proposed.Rebirths = 0, 1
+failBefore = 3
+check(not unavailable:save(proposed, false) and unavailable:releaseCurrent(),
+	"failed-before-write checkpoint can release without committing")
+local unchanged = assert(Session.open(store, "UnwrittenRebirth", "K", options))
+check(unchanged.Data.Rebirths == 0 and unchanged.Data.Coins == 310000,
+	"unwritten rebirth keeps last saved progress")
+
+local final = assert(Session.open(store, "FinalRetry", "L", options))
+final.Data.Coins = 42
+before, failBefore = calls, 4
+check(final:save(final.Data, true) and calls == before + 5 and values.FinalRetry.Data.Coins == 42,
+	"final release retries four transient failures then saves exactly once")
+check(values.FinalRetry.Session == nil and final.Closed, "successful final retry releases lease")
+
+local expired = assert(Session.open(store, "ReleaseTakeover", "M", options))
+now += 241
+local replacement = assert(Session.open(store, "ReleaseTakeover", "N", options))
+local released, releaseReason = expired:releaseCurrent()
+check(not released and releaseReason == "lost session" and values.ReleaseTakeover.Session.Token == "N",
+	"lease-only release cannot unlock a newer owner")
+check(replacement:save(replacement.Data, true), "replacement owner can still save")
 print("PASS: " .. checks .. " production save/session checks")
