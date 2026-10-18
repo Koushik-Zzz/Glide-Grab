@@ -45,6 +45,8 @@ On 18 October the owner's Creator Dashboard URL and read-only Open Cloud checks 
 
 Publish the current full scene from Studio: its 78 union objects fall under the place API's [documented publishing limitations](https://create.roblox.com/docs/cloud/guides/usage-place-publishing). The asset-upload key is configured locally, and the four UI images are approved. `python tools/check_testing_game.py` reads the confirmed game settings and only the owner's live save, storing the private record in ignored `tmp/`. It performs no save writes or publication. Live rejoin verification remains pending until the new build is published and played.
 
+**Later on 18 October:** the owner published and completed the first real live leave/rejoin. The exact egg record survived, departure released the lock, a fresh lock appeared on rejoin and the owner confirmed the egg at camp. [Live verification](live-save-verification.md) records those results and the remaining positive purchase/rebirth checks. The Studio-only verification and prepared checklist below predate this cloud check.
+
 ## First rebirth
 
 The shared station is on the camp's central path near spawn. View the offer and explicitly confirm. Requirements are **250,000 coins**, empty hands, a living character in base camp and proximity to the station. The offer expires after 20 seconds and is single-use; the server rechecks the requirements at confirmation.

@@ -4,6 +4,7 @@ This never publishes, changes permissions, writes a save, or prints credentials.
 The private snapshot is stored under ignored tmp/ for a later rejoin comparison.
 """
 import json
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -40,9 +41,12 @@ def main():
         result["ownerSaveExists"] = False
     else:
         data = record.get("Data", {})
+        session = record.get("Session") or {}
+        expires = session.get("Expires", 0)
         result.update(ownerSaveExists=True, coins=data.get("Coins"), boost=data.get("BoostLevel"),
                       rebirths=data.get("Rebirths"), bat=data.get("Bat"), shields=data.get("Shields"),
-                      storedEggs=len(data.get("Eggs", [])), activeLease=bool(record.get("Session")))
+                      storedEggs=len(data.get("Eggs", [])), leasePresent=bool(session),
+                      activeLease=isinstance(expires, (int, float)) and expires > time.time())
         folder = ROOT / "tmp"
         folder.mkdir(exist_ok=True)
         (folder / "owner-live-save-latest.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")

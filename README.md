@@ -15,6 +15,8 @@ The expanded stud UI adds **Shop, Upgrades and Rebirth** navigation, real gear/b
 
 Original illustrated Shop, Boost, Rebirth and Coin icons are uploaded to the owner's Roblox account and approved. The prior editable symbols remain as loading fallbacks. Sources, generation prompts and upload records are in [assets/ui](assets/ui/README.md). Optional upload tooling reads the ignored `.env`; credentials are never included in the game or repository.
 
+Published testing now targets [Glide & Grab [Testing]](https://www.roblox.com/games/135204243659176), with six-player capacity. The first real cloud egg save/leave/rejoin passed, including exact egg restoration and session-lock release/reacquisition. See [live save verification](docs/live-save-verification.md) for the executed cases and remaining checks; the earlier Studio-only notes are historical.
+
 ## What Rojo syncs
 
 | File | Existing Studio object |
