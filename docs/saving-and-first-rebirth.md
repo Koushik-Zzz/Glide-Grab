@@ -41,6 +41,10 @@ not a guarantee against every server failure.
 
 The published testing game supplied by the owner is a [Roblox experience share link](https://www.roblox.com/share?code=3359fb975b7f13439230317cb2076a00&type=ExperienceDetails&stamp=1792047388819). Publishing remains a separate owner action.
 
+On 18 October the owner's Creator Dashboard URL and read-only Open Cloud checks confirmed universe **10770918233**, root place **135204243659176**, PRIVATE visibility and owner 4105644482. Its [permanent game link](https://www.roblox.com/games/135204243659176) can be used for the real rejoin test. Server capacity was corrected from 50 to six and verified by reading it back. A baseline read of the owner's live profile returned DatastoreNotFound. This is expected before the first session of a build using this store; it does not establish successful saving.
+
+Publish the current full scene from Studio: its 78 union objects fall under the place API's [documented publishing limitations](https://create.roblox.com/docs/cloud/guides/usage-place-publishing). The asset-upload key is configured locally, and the four UI images are approved. `python tools/check_testing_game.py` reads the confirmed game settings and only the owner's live save, storing the private record in ignored `tmp/`. It performs no save writes or publication. Live rejoin verification remains pending until the new build is published and played.
+
 ## First rebirth
 
 The shared station is on the camp's central path near spawn. View the offer and explicitly confirm. Requirements are **250,000 coins**, empty hands, a living character in base camp and proximity to the station. The offer expires after 20 seconds and is single-use; the server rechecks the requirements at confirmation.
