@@ -4,6 +4,8 @@ from pathlib import Path
 
 INK=(16,38,52); PANEL=(21,55,71); WHITE=(255,255,255); GOLD=(255,172,19)
 GREEN=(97,233,35); SKY=(32,189,242); YELLOW=(255,224,50); RED=(240,68,59); PURPLE=(166,89,238)
+art_manifest=json.loads(Path('assets/ui/manifest.json').read_text(encoding='utf-8-sig'))
+ART={item['id']:item.get('robloxAssetId') for item in art_manifest['assets']}
 def c(rgb): return {'Color3':[v/255 for v in rgb]}
 def u(x=0,y=0,sx=0,sy=0): return {'UDim2':[[sx,x],[sy,y]]}
 def n(name, cls='Frame', props=None, children=None):
@@ -51,7 +53,13 @@ def icon(kind,name='Icon',pos=None,dim=None):
         s=[shape('Egg',21,5,27,38,(255,239,195),-15,.5),text('Arrow','→',46,u(0,0,.05,.4),u(0,0,.9,.6),PURPLE)]
     for child in s:
         if child['ClassName']=='TextLabel': child['Properties']['ZIndex']=6
-    root['Children']+=s
+    root['Attributes']={'IconKind':kind}
+    asset=ART.get('boost' if kind=='Upgrades' else kind.lower())
+    if asset:
+        root['Children'] += [n('VectorFallback',props={'Size':u(0,0,1,1),'BackgroundTransparency':1,'ZIndex':5},children=s),
+            n('Illustration','ImageLabel',{'BackgroundTransparency':1,'Size':u(0,0,1,1),'Image':'rbxassetid://'+asset,'ScaleType':'Fit','Visible':True,'ZIndex':7})]
+    else:
+        root['Children']+=s
     return root
 def save(path,obj):
     obj.pop('Name', None)

@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "creatorUserId": 4105644482,
+  "provenance": "Original AI-generated illustrations for this project. User delegated selection and upload. Existing game references informed palette and silhouette; no reference screenshot is shipped. Source PNGs retain generator metadata. No source image edits.",
+  "assets": [
+    {
+      "id": "shop",
+      "source": "source/shop.png",
+      "tool": "Built-in image_gen",
+      "generated": "2026-10-18",
+      "prompt": "Production game UI icon for Glide & Grab, an original Roblox floating-island egg heist game. One single shopping basket in three-quarter view, chunky orange-gold plastic with two dark navy handles and a couple of simple square stud impressions, holding one small cream egg with blue spots and a folded royal-blue hang glider wing. Bright modern Roblox simulator inventory illustration: thick near-black navy outer outline, clean cel shaded highlights, few large shapes, crisp readable silhouette, playful toy materials, top-left lighting. Palette orange #FFAC13, cyan #20BDF2, royal blue, warm yellow, outline #102634. Centered square composition, object fills 82 percent of canvas with generous transparent margin. Deliver a clean transparent cutout. No words, letters, prices, logos, watermark, UI frame, scenery, loose sparkles, cast floor shadow or extra basket. Must remain legible as a 48 pixel navigation icon and as a 72 pixel shop-header illustration.",
+      "reference": null,
+      "role": "Shop navigation and header",
+      "status": "Approved on Roblox; loaded and visually reviewed in Studio",
+      "robloxAssetId": "125696880626812",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "moderation": "Approved"
+    },
+    {
+      "id": "boost",
+      "source": "source/boost.png",
+      "tool": "Built-in image_gen",
+      "generated": "2026-10-18",
+      "prompt": "Create ONE new production UI icon for the Roblox game Glide & Grab. The attached shopping-basket image is a STYLE REFERENCE ONLY: match its thick near-black navy outline, clean cel shaded toy materials, bright saturated palette, top-left lighting, three-quarter volume and crisp chunky silhouette. Do not include the basket or its contents except the subject specified below. Square transparent cutout, subject centered and fills 80 percent of canvas with clear transparent margins. No text, words, letters, logos, watermark, scenery, UI frame, floor or loose sparkles. Large simple details that remain legible at 48 pixels. SUBJECT: one chunky cyan-blue energy bottle with a dark navy cap and a single large golden lightning bolt embossed on its face. Tilt the bottle slightly to the right. Palette cyan #20BDF2, royal blue, golden yellow #FFE032, outline #102634. This represents real flight boost upgrades.",
+      "reference": "source/shop.png",
+      "role": "Boost status, upgrades navigation and boost row",
+      "status": "Approved on Roblox; loaded and visually reviewed in Studio",
+      "robloxAssetId": "93776915952616",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "moderation": "Approved"
+    },
+    {
+      "id": "rebirth",
+      "source": "source/rebirth.png",
+      "tool": "Built-in image_gen",
+      "generated": "2026-10-18",
+      "prompt": "Create ONE new production UI icon for the Roblox game Glide & Grab. The attached shopping-basket image is a STYLE REFERENCE ONLY: match its thick near-black navy outline, clean cel shaded toy materials, bright saturated palette, top-left lighting, three-quarter volume and crisp chunky silhouette. Do not include the basket or its contents except the subject specified below. Square transparent cutout, subject centered and fills 80 percent of canvas with clear transparent margins. No text, words, letters, logos, watermark, scenery, UI frame, floor or loose sparkles. Large simple details that remain legible at 48 pixels. SUBJECT: one cream egg with large cyan blue spots, surrounded by exactly two chunky purple curved arrows forming a clean circular renewal symbol. Egg clearly visible in center, arrows have large readable triangular heads and saturated violet faces with lilac highlights. Palette purple #A659EE, cyan #20BDF2, cream, outline #102634. This represents rebirth.",
+      "reference": "source/shop.png",
+      "role": "Rebirth navigation",
+      "status": "Approved on Roblox; loaded and visually reviewed in Studio",
+      "robloxAssetId": "81767217052938",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "moderation": "Approved"
+    },
+    {
+      "id": "coin",
+      "source": "source/coin.png",
+      "tool": "Built-in image_gen",
+      "generated": "2026-10-18",
+      "prompt": "Create ONE new production UI icon for the Roblox game Glide & Grab. The attached shopping-basket image is a STYLE REFERENCE ONLY: match its thick near-black navy outline, clean cel shaded toy materials, bright saturated palette, top-left lighting, three-quarter volume and crisp chunky silhouette. Do not include the basket or its contents except the subject specified below. Square transparent cutout, subject centered and fills 80 percent of canvas with clear transparent margins. No text, words, letters, logos, watermark, scenery, UI frame, floor or loose sparkles. Large simple details that remain legible at 48 pixels. SUBJECT: one large thick golden coin in a slight three-quarter view, with a single simple embossed five-point star on the face, a chunky raised rim, warm orange side and bright lemon-yellow highlight. No dollar sign or letters. Very clean silhouette. Palette golden orange #FFAC13, yellow #FFE032, outline #102634. This represents the coin wallet.",
+      "reference": "source/shop.png",
+      "role": "Wallet icon",
+      "status": "Approved on Roblox; loaded and visually reviewed in Studio",
+      "robloxAssetId": "102817728214958",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "moderation": "Approved"
+    }
+  ]
+}

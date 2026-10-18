@@ -1,0 +1,23 @@
+{
+  "path": "operations/5c3dff6e-a5f9-4330-96a1-8f0184c78acc",
+  "operationId": "5c3dff6e-a5f9-4330-96a1-8f0184c78acc",
+  "done": true,
+  "response": {
+    "path": "assets/81767217052938",
+    "revisionId": "1",
+    "revisionCreateTime": "2026-10-18T13:51:41.939Z",
+    "assetId": "81767217052938",
+    "displayName": "Glide Grab UI rebirth",
+    "description": "Original Glide & Grab stud UI illustration.",
+    "assetType": "Image",
+    "creationContext": {
+      "creator": {
+        "userId": "4105644482"
+      }
+    },
+    "moderationResult": {
+      "moderationState": "Reviewing"
+    },
+    "state": "Active"
+  }
+}

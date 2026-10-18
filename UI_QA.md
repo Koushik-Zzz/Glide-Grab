@@ -44,3 +44,11 @@ The last single-client session had no client script errors. Existing Roblox Core
 The temporary multiplayer scripts were removed from the Studio Edit tree. Runtime funds, temporary Tools/cargo and prompt-render fixtures disappeared when Play stopped. `tests/` and `scripts/setup/` are not mapped into production. The native scene was not replaced with the scripts-only build. Save the open scene in Studio to retain the synced UI and the reduced-distance workshop signs before publishing.
 
 UI sources are in `ui/`, with controllers in `scripts/` and shared behavior in `scripts/ui/`. `tools/author_stud_ui.py` regenerates the editable JSON templates; modify the authoring recipe alongside generated UI to preserve changes on regeneration.
+
+## Illustrated artwork follow-up — 18 October 2026
+
+The owner's newly supplied Open Cloud key was validated as enabled and unexpired; `.env` and its variants are ignored by Git and never mapped into the game. Generated and uploaded four original transparent icons for Shop, Boost/Upgrades, Rebirth and Coins. Roblox returned Active / Approved for all four. Artwork, full prompts, IDs and upload results are recorded in `assets/ui/`.
+
+Executed in the native Studio place: visible HUD icons loaded, the boost header and dynamic row loaded, switching tabs selected the correct header illustration, and an empty image switched to the editable fallback then restored the uploaded artwork. An initial hidden-ImageLabel loading problem was corrected by using content-fetch completion rather than `IsLoaded` alone. Client errors: none. Rojo build and selected-controller lint passed.
+
+Phone/controller emulation remains unverified: Windows-control app approval timed out before the device controls could be selected. The supplied public share link resolves to the title **Glide & Grab [Testing]**, but its numeric place/universe target is hidden behind browser sign-in; awaiting a Creator Dashboard or permanent game URL before publishing or checking live saves.

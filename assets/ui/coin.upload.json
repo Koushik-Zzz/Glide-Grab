@@ -1,0 +1,23 @@
+{
+  "path": "operations/cb6687c7-ea31-4d5e-a256-0e437a9931f3",
+  "operationId": "cb6687c7-ea31-4d5e-a256-0e437a9931f3",
+  "done": true,
+  "response": {
+    "path": "assets/102817728214958",
+    "revisionId": "1",
+    "revisionCreateTime": "2026-10-18T13:51:43.468Z",
+    "assetId": "102817728214958",
+    "displayName": "Glide Grab UI coin",
+    "description": "Original Glide & Grab stud UI illustration.",
+    "assetType": "Image",
+    "creationContext": {
+      "creator": {
+        "userId": "4105644482"
+      }
+    },
+    "moderationResult": {
+      "moderationState": "Reviewing"
+    },
+    "state": "Active"
+  }
+}

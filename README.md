@@ -13,6 +13,8 @@ The current polish pass adds an editable stud-style HUD and shared notifications
 
 The expanded stud UI adds **Shop, Upgrades and Rebirth** navigation, real gear/boost browsing and purchases, a glider equipment slot, custom interaction cards and coin reward popups. On smaller screens the navigation collapses into **Menu** (or **+** in compact landscape). Purchases and rebirth are available throughout Base Camp; world counters keep their proximity checks. Existing prices and progression rules remain the same. See [UI design](UI_DESIGN_SPEC.md) and [executed checks / remaining release tests](UI_QA.md).
 
+Original illustrated Shop, Boost, Rebirth and Coin icons are uploaded to the owner's Roblox account and approved. The prior editable symbols remain as loading fallbacks. Sources, generation prompts and upload records are in [assets/ui](assets/ui/README.md). Optional upload tooling reads the ignored `.env`; credentials are never included in the game or repository.
+
 ## What Rojo syncs
 
 | File | Existing Studio object |

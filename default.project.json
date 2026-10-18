@@ -165,6 +165,9 @@
         },
         "EquipmentSlot": {
           "$path": "scripts/EquipmentSlot.client.lua"
+        },
+        "Illustrations": {
+          "$path": "scripts/Illustrations.client.lua"
         }
       }
     }

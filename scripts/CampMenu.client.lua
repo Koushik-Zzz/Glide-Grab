@@ -104,6 +104,13 @@ render = function()
 			or not camp and "At camp" or balance < price and "Need coins" or id == "Boost" and "Upgrade" or "Buy"
 	end
 	modal.Header.Title.Text = category == "Boost" and "Boost Workshop" or "Glider & Gear Shop"
+	local iconKind = category == "Boost" and "Upgrades" or "Shop"
+	if modal.Header.Icon:GetAttribute("IconKind") ~= iconKind then
+		local icon = assets.Icons[iconKind]:Clone()
+		icon.Name, icon.Position = "Icon", modal.Header.Icon.Position
+		modal.Header.Icon:Destroy()
+		icon.Parent = modal.Header
+	end
 	modal.Header.Subtitle.Text = category == "Boost" and "Your next burst starts here." or "Sky gear. One glider. More ways to escape."
 	modal.Tabs.Gear.BackgroundColor3 = category == "Gear" and Theme.Sky or Theme.Panel
 	modal.Tabs.Boost.BackgroundColor3 = category == "Boost" and Theme.Purple or Theme.Panel

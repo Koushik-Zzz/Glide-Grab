@@ -3,3 +3,8 @@
 /sourcemap.json
 *.rbxl.lock
 *.rbxlx.lock
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc

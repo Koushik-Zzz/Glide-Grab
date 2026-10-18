@@ -1,0 +1,23 @@
+{
+  "path": "operations/882fc65f-9b8f-4f05-8442-9e1cf45c3e03",
+  "operationId": "882fc65f-9b8f-4f05-8442-9e1cf45c3e03",
+  "done": true,
+  "response": {
+    "path": "assets/93776915952616",
+    "revisionId": "1",
+    "revisionCreateTime": "2026-10-18T13:51:42.092Z",
+    "assetId": "93776915952616",
+    "displayName": "Glide Grab UI boost",
+    "description": "Original Glide & Grab stud UI illustration.",
+    "assetType": "Image",
+    "creationContext": {
+      "creator": {
+        "userId": "4105644482"
+      }
+    },
+    "moderationResult": {
+      "moderationState": "Reviewing"
+    },
+    "state": "Active"
+  }
+}

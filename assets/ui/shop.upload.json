@@ -1,0 +1,23 @@
+{
+  "path": "operations/3c9686b0-74ea-46bc-baf8-1a54d5c83e75",
+  "operationId": "3c9686b0-74ea-46bc-baf8-1a54d5c83e75",
+  "done": true,
+  "response": {
+    "path": "assets/125696880626812",
+    "revisionId": "1",
+    "revisionCreateTime": "2026-10-18T13:51:09.260Z",
+    "assetId": "125696880626812",
+    "displayName": "Glide Grab UI Shop",
+    "description": "Original Glide & Grab stud UI illustration.",
+    "assetType": "Image",
+    "creationContext": {
+      "creator": {
+        "userId": "4105644482"
+      }
+    },
+    "moderationResult": {
+      "moderationState": "Reviewing"
+    },
+    "state": "Active"
+  }
+}

@@ -1026,7 +1026,10 @@
                         }
                       ]
                     }
-                  ]
+                  ],
+                  "Attributes": {
+                    "IconKind": "Slap"
+                  }
                 }
               ]
             },
@@ -1714,7 +1717,10 @@
                         }
                       ]
                     }
-                  ]
+                  ],
+                  "Attributes": {
+                    "IconKind": "Bat"
+                  }
                 }
               ]
             },
@@ -2332,7 +2338,10 @@
                         }
                       ]
                     }
-                  ]
+                  ],
+                  "Attributes": {
+                    "IconKind": "Steal"
+                  }
                 }
               ]
             },
@@ -3020,7 +3029,10 @@
                         }
                       ]
                     }
-                  ]
+                  ],
+                  "Attributes": {
+                    "IconKind": "Shield"
+                  }
                 }
               ]
             }

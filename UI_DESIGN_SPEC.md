@@ -21,3 +21,5 @@ Every row supports owned/free, affordability, capped, return-to-camp, pending an
 ## References
 
 User-provided Oil Empire and generated concepts establish visual direction, not catalogue data. Roblox implementation references: [custom proximity prompts](https://create.roblox.com/docs/ui/proximity-prompts), [responsive UI skill](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/tree/main/skills/other-engines/roblox-ui), and its responsive-layout/input-navigation references. No third-party screenshot is shipped as UI art.
+
+18 October follow-up: original raster illustrations now lead Shop, Boost/Upgrades, Rebirth and Coins; simpler secondary ability/equipment symbols remain editable geometry. The illustrated assets share the original palette and have vector fallbacks during content fetching. `assets/ui/manifest.json` is the art/asset-ID source; `Illustrations.client.lua` handles fetch completion without changing interaction or gameplay state.
