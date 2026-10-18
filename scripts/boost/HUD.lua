@@ -32,8 +32,8 @@ function HUD:layout()
 	local regions = Layout.forSize(size, UserInputService.TouchEnabled)
 	Layout.place(self.Button, regions.Boost)
 	Layout.place(self.Notice, regions.Notice)
-	self.Status.Size = UDim2.new(1, -26, 0, regions.Mode == "Wide" and 25 or 21)
-	self.Hint.Position = UDim2.fromOffset(13, regions.Mode == "Wide" and 34 or 29)
+	self.Status.Size = UDim2.new(1, -67, 0, 23)
+	self.Hint.Position = UDim2.fromOffset(55, 36)
 end
 
 function HUD:showNotice(text)
@@ -78,7 +78,7 @@ function HUD:render(character)
 	self.Status.Text, self.Hint.Text = status, hint
 	self.Fill.Size = UDim2.fromScale(fraction, 1)
 	self.Fill.BackgroundColor3 = active and Theme.Gold or Theme.White
-	self.Button.BackgroundColor3 = active and Theme.Gold or Theme.Sky
+	self.Button.BackgroundColor3 = active and Theme.Gold or Theme.Yellow
 	self.Status.TextColor3 = blocked and Theme.Muted or Theme.White
 	self.Button:SetAttribute("UIDisabled", blocked or readyAt > now)
 	self.Notice.Visible = false -- retained authored path; shared status renders notices

@@ -6,6 +6,7 @@ local UIS = game:GetService("UserInputService")
 local modules = RS:WaitForChild("UIModules")
 local Theme = require(modules.Theme)
 local Motion = require(modules.Motion)
+local Menus = require(modules.Menus)
 local motion = Motion.new()
 local player = Players.LocalPlayer
 local remote = RS:WaitForChild("Rebirth")
@@ -22,10 +23,12 @@ cancel.NextSelectionLeft, cancel.NextSelectionRight = confirm, confirm
 confirm.NextSelectionUp, confirm.NextSelectionDown = cancel, cancel
 cancel.NextSelectionUp, cancel.NextSelectionDown = confirm, confirm
 local token, cost, saving, priorSelection
+local offerCopy = ""
 local connections = {}
 local function close()
 	if saving then return end
 	root.Visible = false
+	if Menus.Current == "Rebirth" then Menus.set(nil) end
 	token = nil
 	CAS:UnbindAction("CloseRebirth")
 	if not GuiService.MenuIsOpen then
@@ -36,6 +39,9 @@ local function render()
 	local stats = player:FindFirstChild("leaderstats")
 	local coins = stats and stats:FindFirstChild("Coins")
 	local enough = coins and coins.Value >= (cost or math.huge)
+	if token then
+		modal.Body.Copy.Text = string.format("<b>$%s / $%s coins</b>\n\n", Theme.short(coins and coins.Value or 0), Theme.short(cost)) .. offerCopy
+	end
 	confirm.Active = token ~= nil and enough and not saving
 	confirm:SetAttribute("UIDisabled", not confirm.Active)
 	confirm.Text = saving and "Saving..." or enough and "Confirm rebirth" or "Need more coins"
@@ -60,10 +66,11 @@ table.insert(connections, remote.OnClientEvent:Connect(function(action, value, p
 		end)
 		modal.Title.Text = "REBIRTH • " .. Theme.short(price) .. " coins"
 		modal.Body.Copy.RichText = true
-		modal.Body.Copy.Text = '<b><font color="#9CFF73">UNLOCK</font></b>\nStorm Isles: stronger crosswinds and Epic eggs\nSecond camp floor: 12 pillow slots\n\n<b><font color="#FFB36B">RESET</font></b>\nAll coins, stored eggs, ready income and boost upgrades\n\n'
+		offerCopy = '<b><font color="#9CFF73">UNLOCK</font></b>\nStorm Isles: stronger crosswinds and Epic eggs\nSecond camp floor: 12 pillow slots\n\n<b><font color="#FFB36B">RESET</font></b>\nAll coins, stored eggs, ready income and boost upgrades\n\n'
 			.. (keepGear and '<b><font color="#7DDEFF">KEEP</font></b>\nYour purchased bat and unused shield charges' or "Gear purchases and shield charges also reset.")
 		cancel.Active, cancel.Visible = true, true
 		priorSelection = GuiService.SelectedObject
+		Menus.set("Rebirth")
 		root.Visible = true
 		modal.Body.CanvasPosition = Vector2.zero
 		motion:pop(modalScale, 0.96)
@@ -87,6 +94,7 @@ table.insert(connections, remote.OnClientEvent:Connect(function(action, value, p
 		modal.Body.Copy.Text = value
 		cancel.Active, cancel.Visible = true, true
 		confirm.Active, confirm.Visible = false, false
+		Menus.set("Rebirth")
 		root.Visible = true
 		motion:pop(modalScale, 0.96)
 		CAS:BindAction("CloseRebirth", function(_, state)
@@ -112,6 +120,8 @@ table.insert(connections, player.CharacterRemoving:Connect(function()
 	close()
 end))
 table.insert(connections, GuiService.MenuOpened:Connect(close))
+table.insert(connections, Menus.subscribe(function(name) if name ~= "Rebirth" and root.Visible then close() end end))
+table.insert(connections, player:GetAttributeChangedSignal("PortalTraveling"):Connect(function() if player:GetAttribute("PortalTraveling") then close() end end))
 task.spawn(function()
 	local coins = player:WaitForChild("leaderstats"):WaitForChild("Coins")
 	table.insert(connections, coins:GetPropertyChangedSignal("Value"):Connect(render))

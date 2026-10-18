@@ -9,6 +9,7 @@ local Theme = require(modules.Theme)
 local Layout = require(modules.Layout)
 local Motion = require(modules.Motion)
 local Notices = require(modules.Notices)
+local CoinPopFX = require(modules.CoinPopFX)
 local motion = Motion.new()
 local player = Players.LocalPlayer
 local gui = player:WaitForChild("PlayerGui"):WaitForChild("GlideAndGrabHUD")
@@ -16,6 +17,7 @@ local canvas = gui.SafeScreen
 local coinCard, missionCard, cargoCard, windCard = canvas.Coins, canvas.Objective, canvas.Cargo, canvas.WindWarning
 local coinLabel, incomeLabel, saveCaption = coinCard.Amount, coinCard.Income, coinCard.Caption
 local coinScale, cargoScale = coinCard.FeedbackScale, cargoCard.FeedbackScale
+local coinFX = CoinPopFX.new(canvas, coinLabel)
 local missionIcon = missionCard.Direction
 local missionTitle, missionHint = missionCard.Title, missionCard.Hint
 local cargoName, cargoValue = cargoCard.EggName, cargoCard.Value
@@ -29,8 +31,9 @@ local function track(connection)
 end
 local function refreshSave()
 	local status = player:GetAttribute("SaveStatus")
-	saveCaption.Text = status == "Saved" and "COINS • SAVED" or status == "Preview only" and "COINS • LOCAL"
-		or status == "Loading progress" and "LOADING PROGRESS" or "COINS • SAVE RETRY"
+	saveCaption.Text = "COINS"
+	coinCard.SaveHint.Text = status == "Preview only" and "Studio preview" or status == "Loading progress" and "Loading progress..."
+		or (status ~= "Saved" and "Saving retry..." or "")
 end
 track(player:GetAttributeChangedSignal("SaveStatus"):Connect(refreshSave))
 refreshSave()
@@ -102,18 +105,28 @@ track(player:GetAttributeChangedSignal("CollectionMessage"):Connect(refreshWind)
 track(player:GetAttributeChangedSignal("CurrentBiome"):Connect(refreshWind))
 refreshWind()
 
-local rewardLabel = canvas.CoinReward
-local rewardStroke = rewardLabel.Outline
+canvas.CoinReward.Visible = false
+local hasCargo = false
 
 local function layout()
 	local size = canvas.AbsoluteSize
 	if size.X <= 0 then return end
 	local regions = Layout.forSize(size, UserInputService.TouchEnabled)
+	cargoCard.Visible = hasCargo and not regions.HideCargo
 	for name, object in pairs({Coins = coinCard, Objective = missionCard, Cargo = cargoCard, Wind = windCard}) do
 		Layout.place(object, regions[name])
 	end
-	coinLabel.Position = UDim2.fromOffset(12, regions.Mode == "Wide" and 22 or 18)
-	coinLabel.Size = UDim2.new(1, -24, 0, regions.Mode == "Wide" and 36 or 28)
+	local small = regions.Coins[3] < 240
+	local mini = regions.Coins[4] <= 80
+	coinCard.Income.Position = mini and UDim2.fromOffset(10, 50) or UDim2.new(0, 14, 1, -36)
+	coinCard.Income.Size = UDim2.new(1, mini and -20 or -28, 0, mini and 20 or 22)
+	coinCard.SaveHint.Visible = not mini
+	coinCard.Icon.Size = UDim2.fromOffset(mini and 32 or small and 42 or 56, mini and 32 or small and 42 or 56)
+	coinCard.Icon.Position = UDim2.fromOffset(10, mini and 14 or small and 20 or 22)
+	coinLabel.Position = UDim2.fromOffset(small and 60 or 78, mini and 22 or 27)
+	coinLabel.Size = UDim2.new(1, small and -70 or -90, 0, mini and 26 or small and 30 or 40)
+	coinCard.Caption.Position = UDim2.fromOffset(small and 60 or 78, 9)
+	coinCard.Caption.Size = UDim2.new(1, small and -70 or -90, 0, 17)
 	missionHint.Position = UDim2.fromOffset(52, regions.Mode == "Wide" and 35 or 30)
 	missionTitle.Size = UDim2.new(1, -66, 0, regions.Mode == "Wide" and 24 or 20)
 	pickupNotice.Position = UDim2.fromOffset(regions.Cargo[1], regions.Cargo[2] - 36)
@@ -124,52 +137,10 @@ track(canvas:GetPropertyChangedSignal("AbsoluteSize"):Connect(layout))
 track(UserInputService.LastInputTypeChanged:Connect(layout))
 layout()
 
-local rewardVersion = 0
-local rewardTween = nil
-local rewardStrokeTween = nil
-local coinTween = nil
 local cargoTween = nil
-
 local function showReward(gain)
-	rewardVersion = rewardVersion + 1
-	local version = rewardVersion
-	if rewardTween then
-		rewardTween:Cancel()
-	end
-	if rewardStrokeTween then
-		rewardStrokeTween:Cancel()
-	end
-	if coinTween then
-		coinTween:Cancel()
-	end
-	local regions = Layout.forSize(canvas.AbsoluteSize, UserInputService.TouchEnabled)
-	local rect = regions.Coins
-	local rewardX, rewardY = rect[1] + 12, rect[2] + rect[4] + 4
-	if regions.Mode ~= "Wide" then
-		rewardX, rewardY = rect[1] + 10, rect[2] + 24
-	end
-	rewardLabel.Text = "+$" .. Theme.short(gain)
-	rewardLabel.Position = UDim2.fromOffset(rewardX, rewardY)
-	rewardLabel.TextTransparency = 0
-	rewardStroke.Transparency = 0
-	rewardLabel.Visible = true
-	coinScale.Scale = GuiService.ReducedMotionEnabled and 1 or 1.055
-	coinTween = TweenService:Create(coinScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1})
-	coinTween:Play()
-	task.delay(0.65, function()
-		if not alive or version ~= rewardVersion then return end
-		rewardTween = TweenService:Create(rewardLabel, TweenInfo.new(0.65), {
-			Position = UDim2.fromOffset(rewardX, rewardY - (GuiService.ReducedMotionEnabled and 0 or 14)), TextTransparency = 1,
-		})
-		rewardTween:Play()
-		rewardStrokeTween = TweenService:Create(rewardStroke, TweenInfo.new(0.65), {Transparency = 1})
-		rewardStrokeTween:Play()
-	end)
-	task.delay(1.35, function()
-		if alive and version == rewardVersion then
-			rewardLabel.Visible = false
-		end
-	end)
+	coinFX:reward(gain)
+	motion:pop(coinScale, 1.035)
 end
 
 local character = nil
@@ -182,8 +153,9 @@ local function refreshCargo()
 	local egg = character and character:FindFirstChild("CarriedEgg")
 	local carrying = character and humanoid and humanoid.Health > 0
 		and egg ~= nil
-	local wasVisible = cargoCard.Visible
-	cargoCard.Visible = carrying and true or false
+	local wasCarrying = hasCargo
+	hasCargo = carrying == true
+	cargoCard.Visible = carrying and not Layout.forSize(canvas.AbsoluteSize, UserInputService.TouchEnabled).HideCargo or false
 	if carrying then
 		local tier = egg:GetAttribute("EggTier")
 		cargoName.Text = (egg:GetAttribute("EggName") or "Common Egg")
@@ -195,7 +167,7 @@ local function refreshCargo()
 		missionHint.Text = inMeadow and "Fly to the blue return portal" or (full and "At a pillow: hold E replace / F sell" or "Use E at your pillow or blue pad")
 		missionCard.BackgroundColor3 = colors.amber
 		missionIcon.TextColor3 = colors.white
-		if not wasVisible then
+		if not wasCarrying then
 			showPickup(cargoName.Text)
 			if cargoTween then
 				cargoTween:Cancel()
@@ -306,10 +278,11 @@ script.Destroying:Connect(function()
 	alive = false
 	disconnectCharacter()
 	motion:destroy()
+	coinFX:destroy()
 	for _, connection in ipairs(connections) do
 		connection:Disconnect()
 	end
-	for _, tween in pairs({pickupTween, rewardTween, rewardStrokeTween, coinTween, cargoTween}) do
+	for _, tween in pairs({pickupTween, cargoTween}) do
 		tween:Cancel()
 	end
 end)

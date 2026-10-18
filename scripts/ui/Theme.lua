@@ -1,11 +1,13 @@
 -- Shared presentation tokens. Gameplay state and prices never live in this module.
 local Theme = {
-	Ink = Color3.fromRGB(13, 24, 42),
+	Ink = Color3.fromRGB(16, 38, 52),
+	Panel = Color3.fromRGB(21, 55, 71),
+	Yellow = Color3.fromRGB(255, 224, 50),
 	White = Color3.fromRGB(255, 255, 255),
 	Cream = Color3.fromRGB(255, 246, 210),
 	Gold = Color3.fromRGB(255, 207, 49),
-	Green = Color3.fromRGB(126, 255, 42),
-	Sky = Color3.fromRGB(41, 199, 255),
+	Green = Color3.fromRGB(97, 233, 35),
+	Sky = Color3.fromRGB(32, 189, 242),
 	Mint = Color3.fromRGB(88, 235, 179),
 	Purple = Color3.fromRGB(181, 112, 255),
 	Red = Color3.fromRGB(255, 97, 109),

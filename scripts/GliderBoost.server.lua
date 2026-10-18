@@ -99,25 +99,27 @@ remote.OnServerEvent:Connect(function(player, ...)
 	player:SetAttribute("BoostReadyAt", record.ReadyAt)
 end)
 
-prompt.Triggered:Connect(function(player)
+local Access = require(script.Parent.ProgressionModules.ShopAccess)
+local function purchase(player, fromVendor, expected)
 	local record = records[player]
 	local now = Workspace:GetServerTimeNow()
-	if not record or now - record.LastBuy < 0.5 then return end
+	if not record or now - record.LastBuy < 0.5 then return false, "Please wait a moment." end
 	record.LastBuy = now
 	local character, root = living(player)
-	if not character or not prompt.Enabled or player:GetAttribute("CurrentBiome") ~= "Base Camp"
-		or (root.Position - prompt.Parent.Position).Magnitude > prompt.MaxActivationDistance then return end
+	if not character or not Access.allowed(player) then return false, "Return to Base Camp to upgrade." end
+	if fromVendor and (not prompt.Enabled or (root.Position - prompt.Parent.Position).Magnitude > prompt.MaxActivationDistance) then return false, "Move closer to the workshop." end
+	if not fromVendor and expected ~= record.Level then return false, "Your boost level changed. Check the next upgrade." end
 	local nextSettings = Config.Levels[record.Level + 1]
 	if not nextSettings then
 		remote:FireClient(player, "Boost fully upgraded!")
-		return
+		return false, "Boost fully upgraded!"
 	end
 	local stats = player:FindFirstChild("leaderstats")
 	local coins = stats and stats:FindFirstChild("Coins")
 	if not coins or not coins:IsA("IntValue") then return end
 	if coins.Value < nextSettings.Price then
 		remote:FireClient(player, "Need " .. (nextSettings.Price - coins.Value) .. " more coins")
-		return
+		return false, "Need " .. (nextSettings.Price - coins.Value) .. " more coins."
 	end
 	-- Atomic transaction: no yield between checking funds and granting the next level.
 	coins.Value -= nextSettings.Price
@@ -127,7 +129,12 @@ prompt.Triggered:Connect(function(player)
 	player:SetAttribute("BoostLevel", record.Level)
 	player:SetAttribute("BoostRecharge", nextSettings.Recharge)
 	remote:FireClient(player, "Boost upgraded! Longer burst, faster recharge")
-end)
+	return true, "Boost upgraded! Longer burst, faster recharge."
+end
+prompt.Triggered:Connect(function(player) purchase(player, true) end)
+local purchaseAPI = Instance.new("BindableFunction")
+purchaseAPI.Name, purchaseAPI.Parent = "PurchaseBoost", script
+purchaseAPI.OnInvoke = function(player, expected) return purchase(player, false, expected) end
 
 local elapsed = 0
 RunService.Heartbeat:Connect(function(dt)

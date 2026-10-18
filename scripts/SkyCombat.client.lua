@@ -11,6 +11,7 @@ local Motion = require(modules.Motion)
 local Theme = require(modules.Theme)
 local motion = Motion.new()
 local player = Players.LocalPlayer
+local Menus = require(game:GetService("ReplicatedStorage"):WaitForChild("UIModules"):WaitForChild("Menus"))
 local remote = ReplicatedStorage:WaitForChild("SkyCombat")
 local Effects = require(ReplicatedStorage:WaitForChild("CombatClientModules"):WaitForChild("Effects"))
 local effects = Effects.new()
@@ -22,7 +23,7 @@ local padText = {Slap = "←", Bat = "↑", Steal = "→", Shield = "↓"}
 local connections, bound = {}, false
 local function request(action)
 	local biome = player:GetAttribute("CurrentBiome")
-	if UserInputService:GetFocusedTextBox() or (biome ~= "Meadow" and biome ~= "Storm Isles") then return end
+	if Menus.Current or UserInputService:GetFocusedTextBox() or (biome ~= "Meadow" and biome ~= "Storm Isles") then return end
 	local c = player.Character
 	local h = c and c:FindFirstChildOfClass("Humanoid")
 	if not h or h.Health <= 0 or player:GetAttribute("PortalTraveling")
@@ -43,7 +44,7 @@ local function layout()
 end
 local function context()
 	local biome = player:GetAttribute("CurrentBiome")
-	local enabled = biome == "Meadow" or biome == "Storm Isles"
+	local enabled = not Menus.Current and (biome == "Meadow" or biome == "Storm Isles")
 	bar.Visible = enabled
 	if enabled and not bound then
 		for action, key in pairs(keys) do
@@ -114,6 +115,7 @@ local function refreshShop()
 end
 table.insert(connections, player:GetAttributeChangedSignal("OwnsBat"):Connect(refreshShop))
 table.insert(connections, player:GetAttributeChangedSignal("EggShieldCharges"):Connect(refreshShop))
+table.insert(connections, Menus.subscribe(context))
 context()
 layout()
 render()

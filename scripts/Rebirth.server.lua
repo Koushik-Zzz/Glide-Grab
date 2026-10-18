@@ -13,28 +13,40 @@ local prompt = station:WaitForChild("RebirthPrompt")
 local remote = Instance.new("RemoteEvent")
 remote.Name, remote.Parent = "Rebirth", RS
 local offers, busy = {}, {}
-local function eligible(player)
+local function eligible(player, fromMenu)
 	local data = Profiles.get(player)
 	local c = player.Character
 	local h = c and c:FindFirstChildOfClass("Humanoid")
 	local root = c and c:FindFirstChild("HumanoidRootPart")
 	return data and h and h.Health > 0 and root and not root.Anchored
 		and player:GetAttribute("CurrentBiome") == "Base Camp" and not player:GetAttribute("PortalTraveling")
-		and (root.Position - station.Position).Magnitude <= prompt.MaxActivationDistance and data or nil
+		and (fromMenu or (root.Position - station.Position).Magnitude <= prompt.MaxActivationDistance) and data or nil
 end
-prompt.Triggered:Connect(function(player)
-	local data = eligible(player)
-	if not data or busy[player] then return end
+local function offerRebirth(player, fromMenu)
+	local data = eligible(player, fromMenu)
+	if not data or busy[player] then
+		if fromMenu then remote:FireClient(player, "Notice", "Return to Base Camp to rebirth.") end
+		return
+	end
 	if data.Rebirths >= Config.MaxRebirths then
 		remote:FireClient(player, "Notice", "First rebirth complete! Storm Isles and your upstairs pillows are unlocked.")
 		return
 	end
 	if offers[player] and os.clock() < offers[player].Created + 1 then return end
 	local token = HttpService:GenerateGUID(false)
-	offers[player] = {Token = token, Created = os.clock()}
+	offers[player] = {Token = token, Created = os.clock(), FromMenu = fromMenu == true}
 	remote:FireClient(player, "Offer", token, Config.Cost, Config.KeepGear)
-end)
+end
+prompt.Triggered:Connect(function(player) offerRebirth(player, false) end)
+local lastOpen = {}
 remote.OnServerEvent:Connect(function(player, ...)
+	if select("#", ...) == 1 and (...) == "Open" then
+		if os.clock() - (lastOpen[player] or -math.huge) >= 1 then
+			lastOpen[player] = os.clock()
+			offerRebirth(player, true)
+		end
+		return
+	end
 	if select("#", ...) ~= 2 then return end
 	local action, token = ...
 	local offer = offers[player]
@@ -44,7 +56,7 @@ remote.OnServerEvent:Connect(function(player, ...)
 		remote:FireClient(player, "Notice", "This offer expired. Use the rebirth station again.")
 		return
 	end
-	local data = eligible(player)
+	local data = eligible(player, offer.FromMenu)
 	if not data or data.Rebirths >= Config.MaxRebirths then
 		remote:FireClient(player, "Notice", "Return to the rebirth station and try again.")
 		return
@@ -77,5 +89,5 @@ remote.OnServerEvent:Connect(function(player, ...)
 	end
 end)
 Players.PlayerRemoving:Connect(function(player)
-	offers[player], busy[player] = nil, nil
+	offers[player], busy[player], lastOpen[player] = nil, nil, nil
 end)

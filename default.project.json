@@ -60,6 +60,9 @@
       "SkyCombat": {
         "$path": "scripts/SkyCombat.server.lua",
         "$ignoreUnknownInstances": true
+      },
+      "CampShop": {
+        "$path": "scripts/CampShop.server.lua"
       }
     },
     "ReplicatedStorage": {
@@ -76,6 +79,9 @@
       "UIModules": {
         "$path": "scripts/ui",
         "$ignoreUnknownInstances": true
+      },
+      "UIAssets": {
+        "$path": "ui/UIAssets.model.json"
       }
     },
     "StarterGui": {
@@ -96,6 +102,9 @@
       "GlideAndGrabHUD": {
         "$path": "ui/FlightHUD.model.json",
         "$ignoreUnknownInstances": true
+      },
+      "CampMenu": {
+        "$path": "ui/CampMenu.model.json"
       }
     },
     "StarterPack": {
@@ -147,6 +156,15 @@
         "SkyCombat": {
           "$path": "scripts/SkyCombat.client.lua",
           "$ignoreUnknownInstances": true
+        },
+        "CampMenu": {
+          "$path": "scripts/CampMenu.client.lua"
+        },
+        "WorldPrompts": {
+          "$path": "scripts/WorldPrompts.client.lua"
+        },
+        "EquipmentSlot": {
+          "$path": "scripts/EquipmentSlot.client.lua"
         }
       }
     }

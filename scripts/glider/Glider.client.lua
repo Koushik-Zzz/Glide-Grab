@@ -271,12 +271,14 @@ function Equipped(Mouse)
 	end
 	PlayerMouse = Player:GetMouse()
 	Mouse.Button1Down:connect(function()
+		if Player and Player:GetAttribute("CampMenuOpen") then return end
 		InvokeServer("MouseClick", {Down = true})
 	end)
 	Mouse.Button1Up:connect(function()
 		InvokeServer("MouseClick", {Down = false})
 	end)
 	Mouse.KeyDown:connect(function(Key)
+		if Player and Player:GetAttribute("CampMenuOpen") then return end
 		local Key = string.lower(Key)
 		local ByteKey = string.byte(Key)
 		if ByteKey == string.byte(" ") and not Debounce

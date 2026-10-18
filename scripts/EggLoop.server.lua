@@ -148,6 +148,7 @@ end
 
 local function makePrompt(part, action, text)
 	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "GrabPrompt"
 	prompt.ActionText = action
 	prompt.ObjectText = text
 	prompt.KeyboardKeyCode = Enum.KeyCode.E

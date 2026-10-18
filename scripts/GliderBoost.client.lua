@@ -6,6 +6,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
+local Menus = require(game:GetService("ReplicatedStorage"):WaitForChild("UIModules"):WaitForChild("Menus"))
 local modules = ReplicatedStorage:WaitForChild("BoostModules")
 local Config = require(modules:WaitForChild("Config"))
 local HUD = require(modules:WaitForChild("HUD"))
@@ -17,7 +18,7 @@ local lastRequest = 0
 local connections = {}
 
 local function request()
-	if UserInputService:GetFocusedTextBox() then return end
+	if Menus.Current or UserInputService:GetFocusedTextBox() then return end
 	local now = Workspace:GetServerTimeNow()
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	local root = character and character:FindFirstChild("HumanoidRootPart")

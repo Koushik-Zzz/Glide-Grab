@@ -11,6 +11,8 @@ The recovered file was inspected directly before the later feature work; the sha
 
 The current polish pass adds an editable stud-style HUD and shared notifications. Owner-approved coin reporting runs only in published servers and appears in Roblox's Creator Dashboard; Studio sends no events. The [economy report and friend-test worksheet](docs/economy-playtest-report.md) explain current pacing and why prices remain unchanged until measured play. Publish the full testing scene before checking real saves or analytics receipt.
 
+The expanded stud UI adds **Shop, Upgrades and Rebirth** navigation, real gear/boost browsing and purchases, a glider equipment slot, custom interaction cards and coin reward popups. On smaller screens the navigation collapses into **Menu** (or **+** in compact landscape). Purchases and rebirth are available throughout Base Camp; world counters keep their proximity checks. Existing prices and progression rules remain the same. See [UI design](UI_DESIGN_SPEC.md) and [executed checks / remaining release tests](UI_QA.md).
+
 ## What Rojo syncs
 
 | File | Existing Studio object |
@@ -41,6 +43,8 @@ The project explicitly preserves unknown instances at every mapped level.
 Additional mappings: `scripts/data` → `ServerScriptService/DataModules`; `scripts/Rebirth.server.lua` → `ServerScriptService/Rebirth`; `scripts/Rebirth.client.lua` → `StarterPlayerScripts/Rebirth`; `ui/RebirthHUD.model.json` → `StarterGui/RebirthHUD`. Existing collection, progression and combat folders include their new modules automatically.
 
 The stud-style HUD is authored in `ui/FlightHUD.model.json` → `StarterGui/GlideAndGrabHUD`, alongside the boost, combat and rebirth templates. `scripts/ui` → `ReplicatedStorage/UIModules` shares the palette, layout regions and interruptible button feedback. FlightHUD reads the editable shell instead of constructing it at runtime. See [UI styling and verification](docs/stud-ui.md).
+
+The new menu shell is `ui/CampMenu.model.json` → `StarterGui/CampMenu`; shared editable icons, shop rows and prompt/reward templates are `ui/UIAssets.model.json` → `ReplicatedStorage/UIAssets`. The `CampMenu`, `EquipmentSlot` and `WorldPrompts` client controllers run in StarterPlayerScripts. `CampShop.server.lua` supplies the catalogue and delegates purchases to existing server transactions. `tools/author_stud_ui.py` regenerates the authored UI files; keep its recipe consistent with visual edits. The older styling notes above describe the first pass; `UI_QA.md` records the current pass.
 
 ## Connect Studio
 

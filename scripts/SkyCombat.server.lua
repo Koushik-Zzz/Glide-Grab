@@ -138,28 +138,31 @@ end)
 
 local shop = Workspace:WaitForChild("SkyGearShop", 10)
 assert(shop, "Author SkyGearShop in Edit mode")
-local function purchase(p, kind, prompt)
+local Access = require(script.Parent.ProgressionModules.ShopAccess)
+local function purchase(p, kind, prompt, expected)
 	local state, now = profiles[p], Workspace:GetServerTimeNow()
-	if not Profiles.get(p) or not state or now - state.LastBuy < 0.5 then return end
+	if not Profiles.get(p) or not state or now - state.LastBuy < 0.5 then return false, "Please wait a moment." end
 	state.LastBuy = now
 	local c, _, root = Rules.living(p)
-	if not c or not prompt.Enabled or p:GetAttribute("CurrentBiome") ~= "Base Camp"
-		or not ((root.Position - prompt.Parent.Position).Magnitude <= prompt.MaxActivationDistance) then return end
+	if not c or not Access.allowed(p) then return false, "Return to Base Camp to buy gear." end
+	if prompt and (not prompt.Enabled or (root.Position - prompt.Parent.Position).Magnitude > prompt.MaxActivationDistance) then return false, "Move closer to the vendor." end
+	if kind ~= "Bat" and kind ~= "Shield" then return false, "Unknown gear." end
+	if not prompt and expected ~= (kind == "Bat" and state.Bat or kind == "Shield" and state.Charges or false) then return false, "Your gear changed. Check the updated item and try again." end
 	local stats = p:FindFirstChild("leaderstats")
 	local coins = stats and stats:FindFirstChild("Coins")
 	if not coins or not coins:IsA("IntValue") then return end
 	if kind == "Bat" and state.Bat then
 		notice(p, "You already own the bat. R to swing in Meadow.")
-		return
+		return false, "Bat already owned."
 	end
 	if kind == "Shield" and state.Charges >= Config.ShieldMaxCharges then
 		notice(p, "You can carry at most three shield charges.")
-		return
+		return false, "Shield charges are full."
 	end
 	local price = kind == "Bat" and Config.BatPrice or Config.ShieldPrice
 	if coins.Value < price then
 		notice(p, "Need " .. (price - coins.Value) .. " more coins.")
-		return
+		return false, "Need " .. (price - coins.Value) .. " more coins."
 	end
 	-- No yield between payment, entitlement and publication.
 	coins.Value -= price
@@ -177,7 +180,11 @@ local function purchase(p, kind, prompt)
 		p:SetAttribute("EggShieldCharges", state.Charges)
 		notice(p, "Shield charge purchased! G while carrying an egg in Meadow.")
 	end
+	return true, kind == "Bat" and "Bat purchased! R to swing in the islands." or "Shield charge added! G protects your carried egg."
 end
+local purchaseAPI = Instance.new("BindableFunction")
+purchaseAPI.Name, purchaseAPI.Parent = "PurchaseGear", script
+purchaseAPI.OnInvoke = function(p, kind, expected) return purchase(p, kind, nil, expected) end
 for _, kind in ipairs({"Bat", "Shield"}) do
 	local prompt = shop[kind .. "Counter"].PurchasePrompt
 	prompt.Triggered:Connect(function(p)
